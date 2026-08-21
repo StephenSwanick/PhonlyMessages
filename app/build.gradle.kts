@@ -1,6 +1,15 @@
+import com.android.build.api.instrumentation.AsmClassVisitorFactory
+import com.android.build.api.instrumentation.ClassContext
+import com.android.build.api.instrumentation.ClassData
+import com.android.build.api.instrumentation.FramesComputationMode
+import com.android.build.api.instrumentation.InstrumentationParameters
+import com.android.build.api.instrumentation.InstrumentationScope
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.properties.Properties
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 import java.io.FileInputStream
 
 plugins {
@@ -10,7 +19,10 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
-val keystorePropertiesFile: File = rootProject.file("keystore.properties")
+val keystorePropertiesFile: File = sequenceOf(
+    File(System.getProperty("user.home"), "AppData/Local/phonly-messages-signing/keystore.properties"),
+    rootProject.file("keystore.properties"),
+).firstOrNull { it.exists() } ?: rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
@@ -68,12 +80,10 @@ android {
     }
 
     buildTypes {
-        debug {
-            applicationIdSuffix = ".debug"
-        }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // First Esper cut: do not minify.
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -116,7 +126,8 @@ android {
         )
     }
 
-    namespace = project.property("APP_ID").toString()
+    // Install id is APP_ID (co.phonly.messages). Kotlin/R namespace stays Fossify.
+    namespace = "org.fossify.messages"
 
     lint {
         checkReleaseBuilds = false
@@ -154,4 +165,55 @@ dependencies {
     implementation(libs.bundles.room)
     ksp(libs.androidx.room.compiler)
     detektPlugins(libs.compose.detekt)
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.instrumentation.transformClassesWith(
+            PhonlyFossifyClassVisitorFactory::class.java,
+            InstrumentationScope.ALL
+        ) {}
+        variant.instrumentation.setAsmFramesComputationMode(
+            FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS
+        )
+    }
+}
+
+/**
+ * Fossify Commons treats any applicationId other than org.fossify.* as a
+ * "fake" app. Rewrite those string checks so co.phonly.messages is accepted.
+ */
+abstract class PhonlyFossifyClassVisitorFactory :
+    AsmClassVisitorFactory<InstrumentationParameters.None> {
+
+    override fun createClassVisitor(
+        classContext: ClassContext,
+        nextClassVisitor: ClassVisitor
+    ): ClassVisitor {
+        return object : ClassVisitor(Opcodes.ASM9, nextClassVisitor) {
+            override fun visitMethod(
+                access: Int,
+                name: String?,
+                descriptor: String?,
+                signature: String?,
+                exceptions: Array<out String>?
+            ): MethodVisitor {
+                val mv = super.visitMethod(access, name, descriptor, signature, exceptions)
+                return object : MethodVisitor(Opcodes.ASM9, mv) {
+                    override fun visitLdcInsn(value: Any?) {
+                        val mapped = when (value) {
+                            "org.fossify." -> "co.phonly."
+                            "yfissof" -> "ylnohp."
+                            else -> value
+                        }
+                        super.visitLdcInsn(mapped)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun isInstrumentable(classData: ClassData): Boolean {
+        return classData.className == "org.fossify.commons.activities.BaseSimpleActivity"
+    }
 }

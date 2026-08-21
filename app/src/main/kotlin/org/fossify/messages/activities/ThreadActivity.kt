@@ -178,6 +178,7 @@ import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_NUMBER
 import org.fossify.messages.helpers.THREAD_TEXT
 import org.fossify.messages.helpers.THREAD_TITLE
+import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.helpers.generateRandomId
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
@@ -1591,6 +1592,9 @@ class ThreadActivity : SimpleActivity() {
             showErrorToast(getString(org.fossify.commons.R.string.unknown_error_occurred))
             return
         }
+        if (SmsAllowlist.denyOutgoingIfBlocked(this, participants.getAddresses())) {
+            return
+        }
         scrollToBottom()
 
         text = removeDiacriticsIfNeeded(text)
@@ -1938,6 +1942,9 @@ class ThreadActivity : SimpleActivity() {
                 TYPE_DELETE -> cancelScheduledMessageAndRefresh(message.id)
                 TYPE_EDIT -> editScheduledMessage(message)
                 TYPE_SEND -> {
+                    if (SmsAllowlist.denyOutgoingIfBlocked(this, participants.getAddresses())) {
+                        return@RadioGroupDialog
+                    }
                     messages = messages.toSortedMessages()
                         .filterNot { message.id == it.id }
                     extractAttachments(message)

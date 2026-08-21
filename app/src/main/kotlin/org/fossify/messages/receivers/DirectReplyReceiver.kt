@@ -12,6 +12,7 @@ import org.fossify.commons.helpers.SimpleContactsHelper
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.extensions.*
 import org.fossify.messages.helpers.REPLY
+import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_NUMBER
 import org.fossify.messages.messaging.sendMessageCompat
@@ -26,6 +27,9 @@ class DirectReplyReceiver : BroadcastReceiver() {
         body = context.removeDiacriticsIfNeeded(body)
 
         if (address != null) {
+            if (SmsAllowlist.denyOutgoingIfBlocked(context, address)) {
+                return
+            }
             var subscriptionId: Int? = null
             val availableSIMs = context.subscriptionManagerCompat().activeSubscriptionInfoList
             if ((availableSIMs?.size ?: 0) > 1) {

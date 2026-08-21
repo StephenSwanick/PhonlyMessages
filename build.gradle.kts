@@ -5,8 +5,9 @@ plugins {
     alias(libs.plugins.detekt).apply(false)
 }
 
-tasks.register<Delete>("clean") {
-    delete {
-        rootProject.buildDir
-    }
+// Dropbox treats app/build files as cloud placeholders; Gradle then fails
+// ("not a regular file"). Keep compiler output on the local disk.
+val localBuildRoot = File(System.getProperty("user.home"), "AppData/Local/phonly-messages-build")
+allprojects {
+    layout.buildDirectory.set(File(localBuildRoot, name))
 }

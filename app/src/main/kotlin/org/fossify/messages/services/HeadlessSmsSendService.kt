@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.net.Uri
 import com.klinker.android.send_message.Settings
+import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.messaging.sendMessageCompat
 
 class HeadlessSmsSendService : Service() {
@@ -18,6 +19,9 @@ class HeadlessSmsSendService : Service() {
             val number = Uri.decode(intent.dataString!!.removePrefix("sms:").removePrefix("smsto:").removePrefix("mms").removePrefix("mmsto:").trim())
             val text = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (!text.isNullOrEmpty()) {
+                if (SmsAllowlist.denyOutgoingIfBlocked(this, number)) {
+                    return START_NOT_STICKY
+                }
                 val addresses = listOf(number)
                 val subId = Settings.DEFAULT_SUBSCRIPTION_ID
                 sendMessageCompat(text, addresses, subId, emptyList())

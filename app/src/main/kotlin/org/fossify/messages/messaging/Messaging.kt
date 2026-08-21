@@ -13,6 +13,7 @@ import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.getThreadId
 import org.fossify.messages.extensions.messagingUtils
 import org.fossify.messages.extensions.shortcutHelper
+import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.messaging.SmsException.Companion.EMPTY_DESTINATION_ADDRESS
 import org.fossify.messages.messaging.SmsException.Companion.ERROR_PERSISTING_MESSAGE
 import org.fossify.messages.messaging.SmsException.Companion.ERROR_SENDING_MESSAGE
@@ -43,6 +44,10 @@ fun Context.sendMessageCompat(
     attachments: List<Attachment>,
     messageId: Long? = null
 ) {
+    if (SmsAllowlist.denyOutgoingIfBlocked(this, addresses)) {
+        return
+    }
+
     val settings = getSendMessageSettings()
     if (subId != null) {
         settings.subscriptionId = subId

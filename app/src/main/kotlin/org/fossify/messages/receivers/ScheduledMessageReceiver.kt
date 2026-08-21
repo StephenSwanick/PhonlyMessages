@@ -13,6 +13,7 @@ import org.fossify.messages.extensions.deleteScheduledMessage
 import org.fossify.messages.extensions.getAddresses
 import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.helpers.SCHEDULED_MESSAGE_ID
+import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
@@ -56,6 +57,10 @@ class ScheduledMessageReceiver : BroadcastReceiver() {
 
         val addresses = message.participants.getAddresses()
         val attachments = message.attachment?.attachments ?: emptyList()
+
+        if (SmsAllowlist.denyOutgoingIfBlocked(context, addresses)) {
+            return
+        }
 
         try {
             Handler(Looper.getMainLooper()).post {
