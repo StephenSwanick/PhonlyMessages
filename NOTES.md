@@ -1,6 +1,6 @@
 # Phonly Messages — continuation notes
 
-Public repo (create if missing): https://github.com/StephenSwanick/PhonlyMessages (GPL-3).
+Public repo: https://github.com/StephenSwanick/PhonlyMessages (GPL-3).
 `origin` = PhonlyMessages. `upstream` = FossifyOrg/Messages.
 `main` = working branch. `clone` = frozen Fossify at `25971576` — do not commit on `clone`.
 
@@ -13,12 +13,12 @@ Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit P
 
 ## Status (2026-08-21)
 
-Identity, branding, and SMS allowlist are in the tree. Debug APK built as `co.phonly.messages` (`VERSION_NAME` 1.0.0, `VERSION_CODE` 24, foss debug). **No device install this session** — do not sideload, grant `ROLE_SMS`, or upload this APK to Esper until asked.
+Identity, branding, and SMS allowlist are in the tree. Default launcher icon is the messenger speech-bubble brandmark (rounded square + bottom-right tail, black shield + white check). Debug APK built as `co.phonly.messages` (`VERSION_NAME` 1.0.0, `VERSION_CODE` 24, foss debug). Device sideload / default-SMS / AppConfig proof is paused until asked — do not sideload, grant `ROLE_SMS`, or upload this APK to Esper.
 
 - Package: `co.phonly.messages`. Namespace pinned to `org.fossify.messages`. Launcher **Messages**. About name Phonly Messages. No `.debug` suffix.
 - First cut: not minified. Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone keystore).
 - Build output: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-24-foss-debug.apk`.
-- Public repo: https://github.com/StephenSwanick/PhonlyMessages (GPL-3). `git push -u origin main` and `git push origin clone`.
+- Public repo is live: https://github.com/StephenSwanick/PhonlyMessages (GPL-3). `origin/main` = `a93793bc`. `origin/clone` = `25971576`.
 - Signed Phone 1.0.0 is already on Esper / AAAAY. Messages needs its own AppConfig on this package.
 
 ## What this fork must become
@@ -30,7 +30,7 @@ Mirror Phonly Phone, for SMS/MMS:
 - Outgoing: not-allowed → toast **Message not allowed**. Cover every send path, not only the compose UI.
 - Incoming (this app must be the **default SMS app**): not-allowed → **silently drop**. Do not insert, notify, or put in recycle bin. `SMS_DELIVER` / MMS receive consumes the message; dropping it is how it stays off the device.
 - Fossify Commons “fake version / Play Store” check rewritten at build time so `co.phonly.messages` is accepted (copy Phone’s ASM visitor).
-- Default launcher icon = Phonly brandmark (copy from Phone). Fossify color-icon variants can stay.
+- Default launcher icon = messenger speech-bubble brandmark. Fossify color-icon variants can stay (they share `ic_launcher_foreground`).
 
 ## Allowlist
 
