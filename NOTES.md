@@ -99,6 +99,26 @@ Incoming (drop before insert/notify):
 
 Do not rely on Fossify’s user block-list UI as the allowlist.
 
+## DISABLE-DELETE (possible, not built)
+
+Parents may want to stop a child from deleting **text messages** (SMS/MMS in this app). Not phone calls / call log — that is Phonly Phone.
+
+**Possible.** Same delivery as the allowlist: parent dashboard toggle → Phonly Code (Mongo) → Esper managed config on package **`co.phonly.messages`**. The child cannot turn it off in Settings. An in-app PIN is weaker; do not use one.
+
+Proposed AppConfig boolean **`disable_delete`** (name TBD with Code). When true:
+
+- Hide every Delete control: single message (thread CAB), whole conversation (thread menu + conversation list), archived threads, Recycle Bin empty/permanent delete, notification Delete (`DeleteSmsReceiver`).
+- No-op the delete functions so a hidden UI or leftover intent cannot wipe the telephony store.
+- Lock Recycle Bin Settings (child can otherwise turn it off and delete for real). Recycle Bin alone is not the parent control.
+
+Kid-device default should almost certainly be **delete off** (`disable_delete: true`). Confirm with dashboard UX when Code adds the toggle.
+
+**Requires this app to be the default SMS app.** Android only lets `ROLE_SMS` write/delete the SMS provider. Google Messages / Samsung Messages must stay HIDE/DISABLE (already the fleet plan) or the child can delete there.
+
+Does **not** cover: archive, copy, forward, share (message stays on the device); factory reset / uninstall if Esper still allows those; the other party’s phone.
+
+Not in this APK yet. Dashboard / Mongo / Esper push is **Phonly Code + V1**, not this chat. Add the restriction key to `app_restrictions.xml` in the same Messages session that gates the delete paths.
+
 ## Default SMS app
 
 The APK cannot silently become the default SMS app. Android 10+ `ROLE_SMS` is a user or device-owner grant. Fossify already prompts in `MainActivity`.
@@ -127,7 +147,7 @@ Also:
 - First Esper cut: **do not minify** (`isMinifyEnabled = false`).
 - Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, **not** the Phone keystore). Lose it and we cannot update this package in place.
 - ASM rewrite: copy `PhonlyFossifyClassVisitorFactory` from Phone `app/build.gradle.kts` (`org.fossify.` → `co.phonly.`, `yfissof` → `ylnohp.`).
-- `app_restrictions.xml` + manifest `APP_RESTRICTIONS` meta-data, same key `allowlist_json`.
+- `app_restrictions.xml` + manifest `APP_RESTRICTIONS` meta-data. Today: `allowlist_json`. Later: `disable_delete` (or agreed Code key) when DISABLE-DELETE ships.
 - Dropbox build dir: Phone uses `%USERPROFILE%\AppData\Local\phonly-phone-build`. Use `%USERPROFILE%\AppData\Local\phonly-messages-build` here (see Phone root `build.gradle.kts`). Do not sync `app/build`, `build`, `.gradle` in Dropbox.
 
 ## Practical build notes
@@ -146,13 +166,15 @@ Also:
 3. Deploy Contacts dual-push if not already live.
 4. KSP Appear on top for `co.phonly.phone`, then `co.phonly.messages`. Lab prove on V2-DEV / Troubleshooter (over Home, reboot, Home↔School) before live Home.
 5. After AAAAY looks boring, copy layout to live Homes.
+6. DISABLE-DELETE is **possible** (SMS only). Dashboard toggle + Mongo + Esper AppConfig push is Code/V1 when product wants it. Do not start that until this APK reads the flag.
 
 **Next Messages session:**
 
 1. Build the unread overlay bubble (spec in Status 2026-08-28). Show on inbound SMS/MMS; hide on read / delete / thread on screen; re-show on boot / process start if unread remains.
 2. Prove **deny** if not already: non-allowed outgoing → toast **Message not allowed**; inbound not-allowed → silent drop.
 3. Recheck iPhone group replies after Google Messages is disabled (RCS unregister is not instant).
-4. Do not upload or CONVERGE unless asked.
+4. DISABLE-DELETE: not this session unless asked. Spec is in **DISABLE-DELETE (possible, not built)**.
+5. Do not upload or CONVERGE unless asked.
 
 Do not mix Esper V1=V2 cutover, PhonlyV1 codebase, or Knox Manage into this folder unless asked.
 
