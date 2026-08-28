@@ -5,19 +5,44 @@ Public repo: https://github.com/StephenSwanick/PhonlyMessages (GPL-3).
 `main` = working branch. `clone` = frozen Fossify at `25971576` — do not commit on `clone`.
 
 This app stays its own public repo. Not inside PhonlyV1 / Phonly Code / Phonly Phone.
+**This chat is Messages-only.** Do not edit PhonlyV1 / Phonly Code or Phone unless the operator explicitly asks in this session.
 Kotlin namespace stays `org.fossify.messages`. Install id is `co.phonly.messages` (debug and release; no `.debug` suffix).
 Voice/dialer lives in Phonly Phone (`co.phonly.phone`). Do not put calling here.
 
 Sibling checkout: `C:\Users\steph\ERC Today Dropbox\SwanickCPA\Phonly\Phonly Phone`
 Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit Phone unless asked.
 
-## Status (2026-08-21)
+## Status (2026-08-28)
 
-Identity, branding, and SMS allowlist are in the tree. Default launcher icon is the messenger speech-bubble brandmark (rounded square + bottom-right tail, black shield + white check). Debug APK built as `co.phonly.messages` (`VERSION_NAME` 1.0.0, `VERSION_CODE` 24, foss debug). Device sideload / default-SMS / AppConfig proof is paused until asked — do not sideload, grant `ROLE_SMS`, or upload this APK to Esper.
+Unread-text overlay **not built**. Research + UX agreed. Build in the **next Messages session**. Coordinate Knox “Appear on top” with the **V1 agent** (not this chat). Do not live-Home this until a lab prove.
+
+Operator: Messages is already the default SMS app on V2; current 1.0.0 is deploying. This session did not change the APK.
+
+Agreed unread cue (kid unit: no Settings, no notification shade):
+
+- Small **bubble** (app-icon size), corner of the screen, over Esper Home. Contact photo or initial. Count badge if that person has more than one unread. Draggable. Tap opens that thread. Stays until that thread is read / deleted / on screen. Not a banner, not a big card (those cover the app grid).
+- **One bubble per conversation.** Same sender: update that bubble. Two senders: two bubbles. Cap at three; further unread collapses to a “more” bubble that opens the inbox.
+- Fossify has receive/read hooks; no floating window. Moderate new overlay code (`SYSTEM_ALERT_WINDOW`). Do not copy Phone’s Settings snackbar. Do not use Samsung Floating / Smart pop-up / chat bubbles.
+- **V1:** KSP Permission Controls → Appear on top for `co.phonly.phone`, then `co.phonly.messages` (Play iframe, not a blueprint). Lab-prove over Home, reboot, Home↔School. If Home hides the window, the bubble cannot ship. Status-bar notify is a weak backup (volume 0, no shade).
+
+## Status (2026-08-23, session close)
+
+This Messages session’s work is done. V2-DEV SHOW / launcher order / CONVERGE belong to the **V1 agent** — do not redo them here.
+
+Signed **1.0.0 / `VERSION_CODE` 25** foss release is in the Esper enterprise library as **Messages**, `co.phonly.messages` (app id `e57df4aa-4589-414e-95cd-324c3afb6251`, version row `7c7059ca-beed-40b5-8b04-430c5e161e97`). Esper listed `version_code` oddly as `1.0.0` / `release_name` `0`. **Not SHOWn** on PhonlyV2 - DEV by this agent.
+
+AAAAY: operator uninstalled Messages. Debug sideload is gone. Google Messages (`com.google.android.apps.messaging`) is gone. **`ROLE_SMS` is empty.** `co.phonly.phone` and T-Mobile VVM (`com.tmobile.vvm.application`) remain. Samsung stock `com.samsung.android.messaging` was never installed on this unit. Signed library APK can be installed via blueprint CONVERGE **after** V1 SHOWs it (debug cert conflict is cleared).
+
+Identity, branding, and SMS allowlist are in the tree. Launcher icon confirmed on AAAAY (foss debug 25, before uninstall). Allowlist landed both packages; **allowed send and group MMS work**. Deny / inbound silent drop **not proven**. iPhone RCS replies did not arrive while Google Messages was still installed (KSP RCS is off; iPhones cache RCS). Should improve after V1 HIDE/DISABLE Google Messages and the number unregisters.
+
+Contacts dual-push (Phone + Messages AppConfig) was patched in Phonly Code this session; dashboard still needs a **PhonlyV1 deploy** if not already live. **V2-DEV layout is V1 only:** SHOW `co.phonly.messages` **4th**, VVM 2nd, HIDE/DISABLE Google Messages. No fleet CONVERGE. AAAAY-only CONVERGE after SHOW. Then set default SMS again (role is empty).
+
+A local `scripts/esper-v2-dev-show-messages.mjs` was started then **deleted** — that job stays in Phonly Code (`scripts/esper/esper-blueprint-v2-dev-vvm-messages.mjs`).
 
 - Package: `co.phonly.messages`. Namespace pinned to `org.fossify.messages`. Launcher **Messages**. About name Phonly Messages. No `.debug` suffix.
 - First cut: not minified. Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone keystore).
-- Build output: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-24-foss-debug.apk`.
+- Debug APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-25-foss-debug.apk`.
+- Esper-signed release: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\release\messages-25-foss-release.apk`. Upload: `node scripts/esper-upload-library.mjs`.
 - Public repo is live: https://github.com/StephenSwanick/PhonlyMessages (GPL-3). `origin/main` = `a93793bc`. `origin/clone` = `25971576`.
 - Signed Phone 1.0.0 is already on Esper / AAAAY. Messages needs its own AppConfig on this package.
 
@@ -114,7 +139,33 @@ Also:
 
 ## Suggested next
 
-1. When asked: sideload debug on AAAAY, set default SMS, push the same `allowlist_json` onto `co.phonly.messages` in Esper, prove allow / deny both directions.
-2. Signed 1.0.0 into the Esper app library after AAAAY looks boring.
+**V1 / Phonly Code agent (not this chat):**
+
+1. SHOW `co.phonly.messages` on PhonlyV2 - DEV in **4th** position. VVM 2nd. HIDE/DISABLE Google Messages (`com.google.android.apps.messaging`).
+2. CONVERGE **AAAAY only** (not fleet) so Esper installs the signed library APK.
+3. Deploy Contacts dual-push if not already live.
+4. KSP Appear on top for `co.phonly.phone`, then `co.phonly.messages`. Lab prove on V2-DEV / Troubleshooter (over Home, reboot, Home↔School) before live Home.
+5. After AAAAY looks boring, copy layout to live Homes.
+
+**Next Messages session:**
+
+1. Build the unread overlay bubble (spec in Status 2026-08-28). Show on inbound SMS/MMS; hide on read / delete / thread on screen; re-show on boot / process start if unread remains.
+2. Prove **deny** if not already: non-allowed outgoing → toast **Message not allowed**; inbound not-allowed → silent drop.
+3. Recheck iPhone group replies after Google Messages is disabled (RCS unregister is not instant).
+4. Do not upload or CONVERGE unless asked.
 
 Do not mix Esper V1=V2 cutover, PhonlyV1 codebase, or Knox Manage into this folder unless asked.
+
+## Unread bubble (build spec, 2026-08-28)
+
+Kid-visible cue until the text is read. No Settings, no shade, no Samsung bubbles.
+
+**Look:** circle ~app-icon size, parked in a corner over Esper Home. Photo or initial. Badge if that thread has multiple unread. Draggable so it does not cover launcher icons. Tap → that `ThreadActivity`. Not a top banner, not a full-width card.
+
+**Stacking:** one bubble per conversation. Same thread updates in place. Cap three on screen; overflow is one “more” bubble → conversation list.
+
+**Code (this APK, next session):** `SYSTEM_ALERT_WINDOW` + `WindowManager` overlay (service). Hook show next to `showReceivedMessageNotification` (SMS + MMS). Hide on existing mark-read / cancel paths (`ThreadActivity.onResume`, `MarkAsReadReceiver`, delete, conversation CAB). No snackbar to overlay Settings.
+
+**Grant (V1):** Knox KSP Permission Controls → Appear on top → `co.phonly.messages`. Blueprint cannot grant this. Keep it on the fleet KSP profile. Lab-prove the window actually sits on Esper Home.
+
+**If Home eats the overlay:** stop. There is no kid-safe fallback. A status-bar notification is not the product (fleet notification volume is 0).
