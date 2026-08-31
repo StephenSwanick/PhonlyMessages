@@ -12,6 +12,26 @@ Voice/dialer lives in Phonly Phone (`co.phonly.phone`). Do not put calling here.
 Sibling checkout: `C:\Users\steph\ERC Today Dropbox\SwanickCPA\Phonly\Phonly Phone`
 Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit Phone unless asked.
 
+## Status (2026-08-30, session close)
+
+Unread overlay **built, signed, and lab-proven on Esper Home** with the signed APK + fleet KSP grant (not adb).
+
+**APK:** foss release **1.1.0 / `VERSION_CODE` 26**. Esper enterprise library **Messages**, `co.phonly.messages` (app id `e57df4aa-4589-414e-95cd-324c3afb6251`, version row `89b5b0fb-80b7-4722-a447-fac1e547df7b`). Esper UI: version `1.1.0`, release tag `0`. 1.0.0 / 25 remains in the library unused. Signed APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\release\messages-26-foss-release.apk`. Upload: `node scripts/esper-upload-library.mjs`.
+
+**Esper (this session, operator asked):** PhonlyV2 - DEV published **v24.0** — SHOW 1.1.0 **4th** (Phone, VVM, Clock, Messages). **CONVERGE AAAAY only** (`Tester SPA-NNZ-AAAAY`, `c3784e4e-d90c-4a6f-a098-f66a236c8bb8`). No fleet CONVERGE. Installer on device: `io.shoonya.shoonyadpc`. `firstInstallTime` 2026-08-30 14:57.
+
+**KSP (operator, Play MCM iframe, fleet-wide):** Device-wide + application management already on. **Enable permission controls** on. Under **Permission Controls** (Premium): **Group 1 Appear on top → `co.phonly.phone`; Group 2 Appear on top → `co.phonly.messages` (Messages must be last).** Do not overwrite this iframe (RCS/battery/LPM live there). Debug mode stays **off**. Comma-separated packages in one group do not work. USB / Settings taps are not the fleet grant.
+
+**KSP grant restore (AAAAY, 2026-08-30 evening):** Phone missed-call overlay worked; Messages bubbles stopped. Device: Phone Appear-on-top **on**, Messages **off**. Iframe already had both groups Configured (Messages Group 1 / Phone Group 2) — not an overwrite. One-line `co.phonly.messages,co.phonly.phone` did not turn Messages on (may not have pushed). Reverted to two groups. Swapped order so **Messages is last**, outer Play Save, AAAAY reboot → **both toggles on**. Count as working; **monitor**. Not luck: Knox re-grants the last group on a real push; earlier grants stick. Not a kid Settings setting. After a Phone reinstall/CONVERGE, if Messages’ toggle drops: keep this order, Save, reboot. Prove the bubble with a test SMS from Home, not only the toggle.
+
+**Lab prove (AAAAY, signed 1.1.0, Esper Home):** 1:1 SMS bubble; two distinct group threads → two bubbles; no ghost orange “9”. Tap opens thread. Count badge. Group two-heads icon. Overlay AppOps `SYSTEM_ALERT_WINDOW` **allow** after KSP save (new uid from Esper install; debug adb grant died at uninstall). USB does not grant overlay.
+
+**Code:** `SYSTEM_ALERT_WINDOW` + `UnreadOverlayService`. Bubbles = simple-threads inbox unread only (not raw SMS/MMS thread_ids). Distinct groups stay distinct (no subset merge). Nameless/ghost thread ids not drawn. No Settings snackbar if grant missing.
+
+**Not proven:** cap-3 + “more”; delete-hides; hide while thread on screen (inbox open); reboot re-show; Home↔School; deny toast / inbound silent drop; iPhone RCS after Google Messages DISABLE.
+
+**Do not:** fleet CONVERGE; live Home copy until reboot + Home↔School look boring; re-enable KSP Debug; put kid numbers in KSP; put Messages back as Group 1 (that order lost the Messages toggle after the Phone uid swap).
+
 ## Status (2026-08-28)
 
 Unread-text overlay **not built**. Research + UX agreed. Build in the **next Messages session**. Coordinate Knox “Appear on top” with the **V1 agent** (not this chat). Do not live-Home this until a lab prove.
@@ -159,21 +179,19 @@ Also:
 
 ## Suggested next
 
-**V1 / Phonly Code agent (not this chat):**
+**V1 / Phonly Code agent:**
 
-1. SHOW `co.phonly.messages` on PhonlyV2 - DEV in **4th** position. VVM 2nd. HIDE/DISABLE Google Messages (`com.google.android.apps.messaging`).
-2. CONVERGE **AAAAY only** (not fleet) so Esper installs the signed library APK.
-3. Deploy Contacts dual-push if not already live.
-4. KSP Appear on top for `co.phonly.phone`, then `co.phonly.messages`. Lab prove on V2-DEV / Troubleshooter (over Home, reboot, Home↔School) before live Home.
-5. After AAAAY looks boring, copy layout to live Homes.
-6. DISABLE-DELETE is **possible** (SMS only). Dashboard toggle + Mongo + Esper AppConfig push is Code/V1 when product wants it. Do not start that until this APK reads the flag.
+1. Do **not** re-SHOW Messages or re-CONVERGE AAAAY unless DEV drifted — already **v24.0** + AAAAY CONVERGED to 1.1.0.
+2. Do **not** edit the fleet KSP iframe except to preserve Permission Controls Groups (**Phone first, Messages last**). Debug mode stays off. No kid numbers in KSP. After any Phone reinstall, force a KSP Save + device reboot if Messages’ Appear-on-top toggle drops.
+3. Optional lab: reboot AAAAY with unread still there; Home↔School; cap-3 “more”. Then copy V2 layout to live Homes **only if asked**.
+4. Contacts dual-push / DISABLE-DELETE: unchanged. Do not start DISABLE-DELETE until this APK reads the flag.
 
 **Next Messages session:**
 
-1. Build the unread overlay bubble (spec in Status 2026-08-28). Show on inbound SMS/MMS; hide on read / delete / thread on screen; re-show on boot / process start if unread remains.
+1. Overlay is in 1.1.0. **Monitor** Appear-on-top: both toggles still on after Phone install / reboot; bubble still draws from Home. Remaining lab: reboot re-show, delete-hides, overflow “more”, thread-on-screen hide.
 2. Prove **deny** if not already: non-allowed outgoing → toast **Message not allowed**; inbound not-allowed → silent drop.
 3. Recheck iPhone group replies after Google Messages is disabled (RCS unregister is not instant).
-4. DISABLE-DELETE: not this session unless asked. Spec is in **DISABLE-DELETE (possible, not built)**.
+4. DISABLE-DELETE: not unless asked.
 5. Do not upload or CONVERGE unless asked.
 
 Do not mix Esper V1=V2 cutover, PhonlyV1 codebase, or Knox Manage into this folder unless asked.
@@ -186,8 +204,8 @@ Kid-visible cue until the text is read. No Settings, no shade, no Samsung bubble
 
 **Stacking:** one bubble per conversation. Same thread updates in place. Cap three on screen; overflow is one “more” bubble → conversation list.
 
-**Code (this APK, next session):** `SYSTEM_ALERT_WINDOW` + `WindowManager` overlay (service). Hook show next to `showReceivedMessageNotification` (SMS + MMS). Hide on existing mark-read / cancel paths (`ThreadActivity.onResume`, `MarkAsReadReceiver`, delete, conversation CAB). No snackbar to overlay Settings.
+**Code (1.1.0):** `SYSTEM_ALERT_WINDOW` + `WindowManager` overlay (`UnreadOverlayService`). Hook show next to `showReceivedMessageNotification` (SMS + MMS). Hide on existing mark-read / cancel paths (`ThreadActivity.onResume`, `MarkAsReadReceiver`, delete, conversation CAB). No snackbar to overlay Settings. Inbox unread threads only; do not subset-merge distinct groups.
 
-**Grant (V1):** Knox KSP Permission Controls → Appear on top → `co.phonly.messages`. Blueprint cannot grant this. Keep it on the fleet KSP profile. Lab-prove the window actually sits on Esper Home.
+**Grant (done 2026-08-30):** Knox KSP Permission Controls (Play iframe, Premium) → Appear on top, **Phone Group 1 / Messages Group 2**. Blueprint cannot grant this. Keep it on the fleet KSP profile. Signed overlay proven over Esper Home on AAAAY. After Phone 1.1.0 uid swap, Messages toggle dropped until this order was pushed and the unit rebooted. Reboot / Home↔School still to prove.
 
 **If Home eats the overlay:** stop. There is no kid-safe fallback. A status-bar notification is not the product (fleet notification volume is 0).

@@ -59,6 +59,7 @@ import org.fossify.messages.helpers.MESSAGES_LIMIT
 import org.fossify.messages.helpers.MessagingCache
 import org.fossify.messages.helpers.NotificationHelper
 import org.fossify.messages.helpers.ShortcutHelper
+import org.fossify.messages.helpers.refreshUnreadOverlay
 import org.fossify.messages.helpers.generateRandomId
 import org.fossify.messages.interfaces.AttachmentsDao
 import org.fossify.messages.interfaces.ConversationsDao
@@ -890,6 +891,7 @@ fun Context.deleteConversation(threadId: Long) {
     if(shortcutHelper.getShortcut(threadId) != null) {
         shortcutHelper.removeShortcutForThread(threadId)
     }
+    refreshUnreadOverlay()
 }
 
 fun Context.checkAndDeleteOldRecycleBinMessages(callback: (() -> Unit)? = null) {
@@ -980,6 +982,7 @@ fun Context.deleteMessage(id: Long, isMMS: Boolean) {
     try {
         contentResolver.delete(uri, selection, selectionArgs)
         messagesDB.delete(id)
+        refreshUnreadOverlay()
     } catch (e: Exception) {
         showErrorToast(e)
     }
@@ -1026,6 +1029,7 @@ fun Context.markThreadMessagesRead(threadId: Long) {
 
     messagesDB.markThreadRead(threadId)
     conversationsDB.markRead(threadId)
+    refreshUnreadOverlay()
 }
 
 fun Context.markThreadMessagesUnread(threadId: Long) {
@@ -1039,6 +1043,7 @@ fun Context.markThreadMessagesUnread(threadId: Long) {
         contentResolver.update(uri, contentValues, selection, selectionArgs)
     }
     conversationsDB.markUnread(threadId)
+    refreshUnreadOverlay()
 } 
 
 @SuppressLint("NewApi")
@@ -1078,6 +1083,7 @@ fun Context.showReceivedMessageNotification(
             bitmap = bitmap,
             sender = senderName
         )
+        refreshUnreadOverlay()
     }
 }
 
