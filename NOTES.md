@@ -11,13 +11,46 @@ Voice/dialer lives in Phonly Phone (`co.phonly.phone`). Do not put calling here.
 Sibling checkout: `C:\Users\steph\ERC Today Dropbox\SwanickCPA\Phonly\Phonly Phone`
 Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit Phone unless asked.
 
+## Status (2026-09-01)
+
+Overlay bubbles are **dead**. CONVERGE clears `SYSTEM_ALERT_WINDOW`. Live cue is a delayed Esper `NOTIFY_DEVICE`. PhonlyAPI owns the timer. This APK only reports facts. Phone and Messages share one Mongo `notification` object (one wait, one card).
+
+**Git:** branch `cue/notify-device` from 1.0.0 allowlist (`a93793bc`) + brandmark (`a8be98bc`). Overlay 1.1.0 / `VERSION_CODE` 26 is **not** on this branch. Do not merge `UnreadOverlayService`, bubbles, or `SYSTEM_ALERT_WINDOW`.
+
+**This APK:** foss **`1.2.0` / `VERSION_CODE` 29** on AAAAY (CONVERGE in place over 28; no uninstall). Package `co.phonly.messages`. Esper library `e57df4aa-4589-414e-95cd-324c3afb6251`, version row **29** `d1da19fa-e086-45a1-910a-0deda3920471`. **PhonlyV2 - DEV** blueprint **v29.0** SHOWs it. Esper-signed with `%LOCALAPPDATA%\phonly-messages-signing\`. Does **not** `<permission>`-declare `co.phonly.permission.NOTIFICATION` — Phone already owns that name (27 hit `INSTALL_FAILED_DUPLICATE_PERMISSION`). Messages only `uses-permission`.
+
+**Home is “left.”** Recents swipe-kill is not required. 28 skipped pile on stale local `alreadySent` / `piledThisCycle` after LOOKED. 29 POSTs pile whenever Messages is not on screen; the API ignores extra piles.
+
+**SMS cue proven (AAAAY, 2026-09-01):**
+- 14:32 SMS, Messages closed → card **14:34** (**Phonly** / **You have unread messages or a missed call.**). Close is not looked.
+- Extra texts after Close stay quiet (`alreadySent`).
+- **29 Home path:** 15:53 SMS → card **15:55**; Close; 15:58a extra (quiet); **opened Messages** (LOOKED); Home; 15:58b → wait 15:59 → card **16:00**. Swipe-close-all not required.
+- USB debug cannot POST (Knox). No fleet CONVERGE. No KSP Save.
+
+**Next lab: missed calls on Phone** (same card, same Mongo). Recents open = looked; Home = left; Close on the Esper dialog is still not looked. LOOKED/LEFT between Phone and Messages is one-way until Phone adds `signature|knownSigner` with both certs. Do not edit Phone from this folder unless asked. Phone notes: sibling `Phonly Phone/NOTES.md`.
+
+**Token / IMEI (not in git):** rebuild after the operator sets Render env. File `%LOCALAPPDATA%\phonly-messages-signing\notification.properties` (or the Phone signing folder):
+
+```
+token=<NOTIFICATION_SECRET or DEVICE_NOTIFICATION_LAB_TOKEN>
+imei=<14–16 digit IMEI in Mongo>
+```
+
+Env `NOTIFICATION_SECRET` / `DEVICE_NOTIFICATION_LAB_TOKEN` also work. **Signed 1.2.0 does not bake an IMEI** — it reads this phone’s IMEI at runtime (telephony, then Esper AppConfig `device_imei`). Debug may still use a local `imei=` override. Empty token → log `WOULD_PILE` / `WOULD_LOOKED` / `WOULD_CLEAR` and keep going. SMS must not crash if the API is down (503).
+
+**Facts only:** `GET /api/device/notification`, `POST .../pile|looked|clear` at `https://phonlyv1.onrender.com`. JSON `{ "imei", "source": "messages" }`. No SMS body, no thread id. No local 15-minute timer. No AlarmManager for this. No Esper key.
+
+**When:** unread SMS/MMS while Messages is not in front → POST pile (8s debounce). API does not restart an active wait or a sent card. Open inbox/thread → POST looked + broadcast `NOTIFICATION_LOOKED` to Phone. Home / Recents (not swipe-kill) with unread → POST pile (unless Phone Recents is in front). Inbox empty → POST clear. Boot GET must not overwrite a LOOKED that landed while the GET was in flight. Phone LOOKED holds pile until Phone LEFT.
+
+**Do not:** fleet CONVERGE; Save KSP; Appear-on-top; put kid numbers in KSP.
+
 ## Status (2026-08-21)
 
 Identity, branding, and SMS allowlist are in the tree. Default launcher icon is the messenger speech-bubble brandmark (rounded square + bottom-right tail, black shield + white check). Debug APK built as `co.phonly.messages` (`VERSION_NAME` 1.0.0, `VERSION_CODE` 24, foss debug). Device sideload / default-SMS / AppConfig proof is paused until asked — do not sideload, grant `ROLE_SMS`, or upload this APK to Esper.
 
 - Package: `co.phonly.messages`. Namespace pinned to `org.fossify.messages`. Launcher **Messages**. About name Phonly Messages. No `.debug` suffix.
-- First cut: not minified. Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone keystore).
-- Build output: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-24-foss-debug.apk`.
+- First cut: not minified. **Release** signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone release keystore). **Debug** APK uses `%USERPROFILE%\.android\debug.keystore` so it matches Phone debug (signature permission).
+- Cue debug APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-27-foss-debug.apk`.
 - Public repo is live: https://github.com/StephenSwanick/PhonlyMessages (GPL-3). `origin/main` = `a93793bc`. `origin/clone` = `25971576`.
 - Signed Phone 1.0.0 is already on Esper / AAAAY. Messages needs its own AppConfig on this package.
 
@@ -114,7 +147,7 @@ Also:
 
 ## Suggested next
 
-1. When asked: sideload debug on AAAAY, set default SMS, push the same `allowlist_json` onto `co.phonly.messages` in Esper, prove allow / deny both directions.
-2. Signed 1.0.0 into the Esper app library after AAAAY looks boring.
+1. **Phone miss cue on AAAAY** (operator + Phone agent). Allowlisted miss, Recents not in front → one wait → one card. Close → extra misses stay quiet. Open Recents (looked) → Home → later miss → new card. Do not swipe-kill Phone. Same 60s lab delay / 1-minute cron.
+2. Do not fleet CONVERGE. Do not Save KSP. Do not merge overlay here.
 
 Do not mix Esper V1=V2 cutover, PhonlyV1 codebase, or Knox Manage into this folder unless asked.
