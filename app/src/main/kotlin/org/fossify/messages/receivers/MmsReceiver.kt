@@ -20,6 +20,7 @@ import org.fossify.messages.extensions.insertOrUpdateConversation
 import org.fossify.messages.extensions.shouldUnarchive
 import org.fossify.messages.extensions.showReceivedMessageNotification
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.helpers.NotificationCue
 import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.helpers.refreshConversations
@@ -101,5 +102,6 @@ class MmsReceiver : MmsReceivedReceiver() {
         }
         refreshMessages()
         refreshConversations()
+        NotificationCue.onInboxChanged(context)
     }
 }

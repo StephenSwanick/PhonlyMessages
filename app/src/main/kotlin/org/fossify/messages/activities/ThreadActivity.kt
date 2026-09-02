@@ -159,8 +159,6 @@ import org.fossify.messages.extensions.updateConversationArchivedStatus
 import org.fossify.messages.extensions.updateLastConversationMessage
 import org.fossify.messages.extensions.updateScheduledMessagesThreadId
 import org.fossify.messages.helpers.CAPTURE_AUDIO_INTENT
-import org.fossify.messages.helpers.UnreadOverlay
-import org.fossify.messages.helpers.refreshUnreadOverlay
 import org.fossify.messages.helpers.CAPTURE_PHOTO_INTENT
 import org.fossify.messages.helpers.CAPTURE_VIDEO_INTENT
 import org.fossify.messages.helpers.FILE_SIZE_NONE
@@ -289,8 +287,6 @@ class ThreadActivity : SimpleActivity() {
         )
 
         isActivityVisible = true
-        UnreadOverlay.openThreadId = threadId
-        refreshUnreadOverlay()
 
         notificationManager.cancel(threadId.hashCode())
 
@@ -324,10 +320,6 @@ class ThreadActivity : SimpleActivity() {
         saveDraftMessage()
         bus?.post(Events.RefreshConversations())
         isActivityVisible = false
-        if (UnreadOverlay.openThreadId == threadId) {
-            UnreadOverlay.openThreadId = 0L
-            refreshUnreadOverlay()
-        }
     }
 
     override fun onStop() {

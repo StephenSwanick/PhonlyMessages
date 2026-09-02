@@ -4,6 +4,8 @@
     <string name="message_not_allowed">Message not allowed</string>
     <string name="allowlist_json_title">Allowlist JSON</string>
     <string name="allowlist_json_description">JSON array of allowlist entries. Messages uses e164 when sms is true.</string>
+    <string name="device_imei_title">Device IMEI</string>
+    <string name="device_imei_description">14–16 digit IMEI from Mongo. Used only to report pile/looked/clear. Not shown to the kid.</string>
 
     <string name="mms_file_size_limit_100kb">100KB</string>
     <string name="mms_file_size_limit_200kb">200KB</string>

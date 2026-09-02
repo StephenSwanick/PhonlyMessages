@@ -14,9 +14,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="co.phonly.permission.NOTIFICATION" />
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission
@@ -26,6 +28,7 @@
     <queries>
         <package android:name="org.fossify.contacts.debug" />
         <package android:name="org.fossify.contacts" />
+        <package android:name="co.phonly.phone" />
     </queries>
 
     <uses-feature android:name="android.hardware.telephony" />
@@ -248,10 +251,15 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".services.UnreadOverlayService"
-            android:exported="false"
-            android:stopWithTask="false" />
+        <receiver
+            android:name=".receivers.NotificationCueReceiver"
+            android:exported="true"
+            android:permission="co.phonly.permission.NOTIFICATION">
+            <intent-filter>
+                <action android:name="co.phonly.intent.NOTIFICATION_LOOKED" />
+                <action android:name="co.phonly.intent.NOTIFICATION_LEFT" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

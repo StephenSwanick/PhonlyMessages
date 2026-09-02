@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="notification_large_icon_size">72dp</dimen>
-    <dimen name="unread_overlay_bubble_size">56dp</dimen>
-    <dimen name="unread_overlay_badge_size">18dp</dimen>
-    <dimen name="unread_overlay_gap">8dp</dimen>
-    <dimen name="unread_overlay_edge_margin">16dp</dimen>
     <dimen name="bigger_avatar_size">64dp</dimen>
     <dimen name="play_outline_size">36dp</dimen>
     <dimen name="attachment_preview_size">64dp</dimen>

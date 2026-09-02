@@ -11,7 +11,7 @@ import org.fossify.commons.helpers.PERMISSION_READ_CONTACTS
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.extensions.rescheduleAllScheduledMessages
 import org.fossify.messages.helpers.MessagingCache
-import org.fossify.messages.helpers.refreshUnreadOverlay
+import org.fossify.messages.helpers.NotificationCue
 
 class App : FossifyApp() {
     override val isAppLockFeatureAvailable = true
@@ -31,9 +31,9 @@ class App : FossifyApp() {
             }
         }
 
+        NotificationCue.start(this)
         ensureBackgroundThread {
             rescheduleAllScheduledMessages()
-            refreshUnreadOverlay()
         }
     }
 

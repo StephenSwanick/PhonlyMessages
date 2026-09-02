@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.extensions.rescheduleAllScheduledMessages
-import org.fossify.messages.helpers.refreshUnreadOverlay
 
 /**
  * Reschedules alarms after boot/package updates.
@@ -15,7 +14,6 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         ensureBackgroundThread {
             context.rescheduleAllScheduledMessages()
-            context.refreshUnreadOverlay()
             pendingResult.finish()
         }
     }

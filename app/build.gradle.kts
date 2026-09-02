@@ -28,12 +28,47 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val notificationPropertiesFile: File? = sequenceOf(
+    File(System.getProperty("user.home"), "AppData/Local/phonly-messages-signing/notification.properties"),
+    File(System.getProperty("user.home"), "AppData/Local/phonly-phone-signing/notification.properties"),
+).firstOrNull { it.exists() }
+val notificationProperties = Properties()
+if (notificationPropertiesFile != null) {
+    notificationProperties.load(FileInputStream(notificationPropertiesFile))
+}
+
+// Rebuild BuildConfig when the local token/imei file changes (file is not in git).
+if (notificationPropertiesFile != null) {
+    tasks.configureEach {
+        if (name.contains("BuildConfig", ignoreCase = true)) {
+            inputs.file(notificationPropertiesFile)
+        }
+    }
+}
+
 fun hasSigningVars(): Boolean {
     return providers.environmentVariable("SIGNING_KEY_ALIAS").orNull != null
             && providers.environmentVariable("SIGNING_KEY_PASSWORD").orNull != null
             && providers.environmentVariable("SIGNING_STORE_FILE").orNull != null
             && providers.environmentVariable("SIGNING_STORE_PASSWORD").orNull != null
 }
+
+fun escapeBuildConfig(value: String): String {
+    return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
+}
+
+fun notificationSecret(): String {
+    return providers.environmentVariable("NOTIFICATION_SECRET").orNull
+        ?: providers.environmentVariable("DEVICE_NOTIFICATION_LAB_TOKEN").orNull
+        ?: notificationProperties.getProperty("token").orEmpty()
+}
+
+fun deviceImeiOverride(): String {
+    return providers.environmentVariable("DEVICE_IMEI").orNull
+        ?: notificationProperties.getProperty("imei").orEmpty()
+}
+
+val debugKeystoreFile = File(System.getProperty("user.home"), ".android/debug.keystore")
 
 base {
     val versionCode = project.property("VERSION_CODE").toString().toInt()
@@ -52,9 +87,26 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+        buildConfigField("String", "NOTIFICATION_API_BASE", "\"https://phonlyv1.onrender.com\"")
+        buildConfigField(
+            "String",
+            "NOTIFICATION_SECRET",
+            "\"${escapeBuildConfig(notificationSecret())}\""
+        )
+        buildConfigField(
+            "String",
+            "DEVICE_IMEI_OVERRIDE",
+            "\"${escapeBuildConfig(deviceImeiOverride())}\""
+        )
     }
 
     signingConfigs {
+        getByName("debug") {
+            storeFile = debugKeystoreFile
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (keystorePropertiesFile.exists()) {
             register("release") {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
@@ -80,6 +132,10 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            // Same debug cert as Phone so co.phonly.permission.NOTIFICATION (signature) works.
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             // First Esper cut: do not minify.
             isMinifyEnabled = false
@@ -91,6 +147,8 @@ android {
             if (keystorePropertiesFile.exists() || hasSigningVars()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // Any in-service IMEI at runtime. Do not bake AAAAY into a library APK.
+            buildConfigField("String", "DEVICE_IMEI_OVERRIDE", "\"\"")
         }
     }
 

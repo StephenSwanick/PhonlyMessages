@@ -2,67 +2,88 @@
 
 Public repo: https://github.com/StephenSwanick/PhonlyMessages (GPL-3).
 `origin` = PhonlyMessages. `upstream` = FossifyOrg/Messages.
-`main` = working branch. `clone` = frozen Fossify at `25971576` — do not commit on `clone`.
+**Work on `main`.** `clone` = frozen Fossify at `25971576` — do not commit on `clone`.
 
 This app stays its own public repo. Not inside PhonlyV1 / Phonly Code / Phonly Phone.
-**This chat is Messages-only.** Do not edit PhonlyV1 / Phonly Code or Phone unless the operator explicitly asks in this session.
+This chat is Messages-only. Do not edit PhonlyV1 / Phonly Code or Phone unless the operator explicitly asks in this session.
 Kotlin namespace stays `org.fossify.messages`. Install id is `co.phonly.messages` (debug and release; no `.debug` suffix).
 Voice/dialer lives in Phonly Phone (`co.phonly.phone`). Do not put calling here.
 
 Sibling checkout: `C:\Users\steph\ERC Today Dropbox\SwanickCPA\Phonly\Phonly Phone`
 Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit Phone unless asked.
 
-## Status (2026-08-30, session close)
+## Status (2026-09-01, evening)
 
-Unread overlay **built, signed, and lab-proven on Esper Home** with the signed APK + fleet KSP grant (not adb).
+Overlay bubbles are **dead**. CONVERGE clears `SYSTEM_ALERT_WINDOW`. Live cue is a delayed Esper `NOTIFY_DEVICE`. PhonlyAPI owns the timer. This APK only reports facts.
 
-**APK:** foss release **1.1.0 / `VERSION_CODE` 26**. Esper enterprise library **Messages**, `co.phonly.messages` (app id `e57df4aa-4589-414e-95cd-324c3afb6251`, version row `89b5b0fb-80b7-4722-a447-fac1e547df7b`). Esper UI: version `1.1.0`, release tag `0`. 1.0.0 / 25 remains in the library unused. Signed APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\release\messages-26-foss-release.apk`. Upload: `node scripts/esper-upload-library.mjs`.
+**Git:** live work is **`main`**. Cue source (31) + these notes land here. Overlay 1.1.0 / `VERSION_CODE` 26 is **history only** — do not ship `UnreadOverlayService`, bubbles, or `SYSTEM_ALERT_WINDOW` in the live APK. `cue/notify-device` was the lab branch from 1.0.0 allowlist (`a93793bc`) + brandmark (`a8be98bc`); do not keep using it as the working branch.
 
-**Esper (this session, operator asked):** PhonlyV2 - DEV published **v24.0** — SHOW 1.1.0 **4th** (Phone, VVM, Clock, Messages). **CONVERGE AAAAY only** (`Tester SPA-NNZ-AAAAY`, `c3784e4e-d90c-4a6f-a098-f66a236c8bb8`). No fleet CONVERGE. Installer on device: `io.shoonya.shoonyadpc`. `firstInstallTime` 2026-08-30 14:57.
+**This APK:** foss **`1.2.0` / `VERSION_CODE` 31**. AAAAY is on **31** (operator CONVERGEd; matches Phone 31). Package `co.phonly.messages`. Esper-signed with `%LOCALAPPDATA%\phonly-messages-signing\`. Does **not** `<permission>`-declare `co.phonly.permission.NOTIFICATION` — Phone already owns that name (27 hit `INSTALL_FAILED_DUPLICATE_PERMISSION`). Messages only `uses-permission`.
 
-**KSP (operator, Play MCM iframe, fleet-wide):** Device-wide + application management already on. **Enable permission controls** on. Under **Permission Controls** (Premium): **Group 1 Appear on top → `co.phonly.phone`; Group 2 Appear on top → `co.phonly.messages` (Messages must be last).** Do not overwrite this iframe (RCS/battery/LPM live there). Debug mode stays **off**. Comma-separated packages in one group do not work. USB / Settings taps are not the fleet grant.
+**Shared Mongo:** Phone and Messages share one `devices.notification { alreadySent, waitingSince, sentAt }`. One wait, one card. Copy: title **Phonly**, body **You have unread messages or a missed call.** Close on the Esper card is **not** looked. Extra events while `alreadySent` stay quiet. Lab delay `NOTIFICATION_DELAY_MS=60000`. Cron `PhonlyScheduler` every minute → `POST /api/cron/schedule-sync`. API `https://phonlyv1.onrender.com`.
 
-**KSP grant restore (AAAAY, 2026-08-30 evening):** Phone missed-call overlay worked; Messages bubbles stopped. Device: Phone Appear-on-top **on**, Messages **off**. Iframe already had both groups Configured (Messages Group 1 / Phone Group 2) — not an overwrite. One-line `co.phonly.messages,co.phonly.phone` did not turn Messages on (may not have pushed). Reverted to two groups. Swapped order so **Messages is last**, outer Play Save, AAAAY reboot → **both toggles on**. Count as working; **monitor**. Not luck: Knox re-grants the last group on a real push; earlier grants stick. Not a kid Settings setting. After a Phone reinstall/CONVERGE, if Messages’ toggle drops: keep this order, Save, reboot. Prove the bubble with a test SMS from Home, not only the toggle.
+**31 behavior:** first pile POST **8s** after unread (not a 2-minute wait). No `NET_CAPABILITY_VALIDATED` skip. If POST fails (`UnknownHostException`, 5xx, 429): retry every **15s** until looked or success — no 2-minute give-up. Also retry immediately on `ConnectivityManager` network-up (INTERNET capability, not VALIDATED). Home is “left”; Recents swipe-kill is not required. Esper library `e57df4aa-4589-414e-95cd-324c3afb6251`, version row 31 `4948732f-0d8b-4c60-b4e2-eb555856e3e8`. SHOW on PhonlyV2 - DEV published blueprint **v37.0**. APK: `%LOCALAPPDATA%\phonly-messages-build\app\outputs\apk\foss\release\messages-31-foss-release.apk`.
 
-**Lab prove (AAAAY, signed 1.1.0, Esper Home):** 1:1 SMS bubble; two distinct group threads → two bubbles; no ghost orange “9”. Tap opens thread. Count badge. Group two-heads icon. Overlay AppOps `SYSTEM_ALERT_WINDOW` **allow** after KSP save (new uid from Esper install; debug adb grant died at uninstall). USB does not grant overlay.
+**SMS cue proven (AAAAY, daytime):**
+- 14:32 SMS, Messages closed → card **14:34**. Close is not looked.
+- Extra texts after Close stay quiet (`alreadySent`).
+- **29 Home path:** 15:53 SMS → card **15:55**; Close; 15:58a extra (quiet); opened Messages (LOOKED); Home; 15:58b → card **16:00**. Swipe-close-all not required.
+- USB debug cannot POST (Knox `UnknownHostException` / `installer=null`). No fleet CONVERGE. No KSP Save.
 
-**Code:** `SYSTEM_ALERT_WINDOW` + `UnreadOverlayService`. Bubbles = simple-threads inbox unread only (not raw SMS/MMS thread_ids). Distinct groups stay distinct (no subset merge). Nameless/ghost thread ids not drawn. No Settings snackbar if grant missing.
+**10:55 PM text — no card (AAAAY, 31). Not a 6-minute outage.**
 
-**Not proven:** cap-3 + “more”; delete-hides; hide while thread on screen (inbox open); reboot re-show; Home↔School; deny toast / inbound silent drop; iPhone RCS after Google Messages DISABLE.
+Cron through 11:00: `sent: 0, skipped: 0` (nobody waiting on the server). Mongo GET ~11:01: `alreadySent: false`, `waitingSince: 2026-09-02T03:01:21.872Z` (11:01:21 PM EDT), `sentAt: null`.
 
-**Do not:** fleet CONVERGE; live Home copy until reboot + Home↔School look boring; re-enable KSP Debug; put kid numbers in KSP; put Messages back as Group 1 (that order lost the Messages toggle after the Phone uid swap).
+`adb logcat` tag `PhonlyCue` (two PIDs: **29435** Messages, **29180** Phone), device `SM-A166U` / `R5GL55PXBNW`:
 
-## Status (2026-08-28)
+- **22:50:28** Phone `POST pile` succeeded; Esper card around **22:52** (`sentAt` 22:52:04). That set `alreadySent`.
+- **22:55:08** Messages `pile debounced 8000ms` (the 10:55 SMS). **22:55:17** Messages **`POST pile` succeeded.** API no-op because Phone already owned the one-card lock. Cron stayed 0/0. This is why the text looked like it never queued.
+- Phone **29180** kept `UnknownHostException: Unable to resolve host "phonlyv1.onrender.com"` every 15s from ~22:46 through **23:00+**, including after `network up; pile now`. That is **this app uid cannot resolve DNS**, not the whole phone offline. Browser can work. Messages sometimes can POST while Phone cannot.
+- **23:00:57** Recents opened → Phone LOOKED. **23:01:00** Phone LEFT + **CLEAR** (`waitingSince=null`). That **wiped** the 10:55 Messages wait even though the inbox was still unread. Recents is “I looked at calls,” not “I read texts.”
+- **23:01:01** Messages `POST looked`; **23:01:22** Messages `POST pile` → matches Mongo `waitingSince` 11:01:21. The 11:01 wait is a **new** pile after Phone CLEAR, not a late first POST.
 
-Unread-text overlay **not built**. Research + UX agreed. Build in the **next Messages session**. Coordinate Knox “Appear on top” with the **V1 agent** (not this chat). Do not live-Home this until a lab prove.
+Inbox observer also resets the 8s debounce in bursts (`pile debounced` many times in one second).
 
-Operator: Messages is already the default SMS app on V2; current 1.0.0 is deploying. This session did not change the APK.
+**Why it feels erratic (three clocks):**
+1. One shared “already told you” flag — a miss card blocks a later text (and the other way around) until they open Recents *or* Messages.
+2. Looking resets the wait — Recents LOOKED/CLEAR can wipe an SMS wait; opening Messages is LOOKED for the shared object.
+3. Knox per-uid DNS — Phone and Messages do not share “is the network up?” Retries do not invent a resolver. 31 is not the old VALIDATED skip.
 
-Agreed unread cue (kid unit: no Settings, no notification shade):
+**What would make it workable (do all three; ~3 in 4 for lab-useful, not 99%):**
+1. **API: source-scoped `looked` / `clear`.** Phone may only clear the miss side. Messages may only clear the SMS side. A card should still fire if the other side is waiting. This is the only change that would have kept the 10:55 wait through the 11:01 Recents open. PhonlyAPI / Phonly Code, not this APK alone.
+2. **Product call on “one card.”** Current rule: after a card, extra texts *and* extra misses stay quiet until they open the relevant app; Close is not looked. That is consistent, but a text after a miss card feels broken. Pick one and code it: keep one card until they look; **or** new event after Close starts a new wait; **or** two Mongo locks (miss vs unread). Without this call, miss-then-text will still look flaky even after (1).
+3. **One HTTP poster, not a hope that Knox treats both uids the same.** Esper “allow the hostname” may not fix Phone’s `UnknownHostException`. Tonight Messages resolved at 22:55:17 while Phone did not. Funnel Phone facts locally and let Messages POST (or the reverse, whichever uid actually resolves). If both uids fail DNS, there is still no card until Knox lets someone through.
 
-- Small **bubble** (app-icon size), corner of the screen, over Esper Home. Contact photo or initial. Count badge if that person has more than one unread. Draggable. Tap opens that thread. Stays until that thread is read / deleted / on screen. Not a banner, not a big card (those cover the app grid).
-- **One bubble per conversation.** Same sender: update that bubble. Two senders: two bubbles. Cap at three; further unread collapses to a “more” bubble that opens the inbox.
-- Fossify has receive/read hooks; no floating window. Moderate new overlay code (`SYSTEM_ALERT_WINDOW`). Do not copy Phone’s Settings snackbar. Do not use Samsung Floating / Smart pop-up / chat bubbles.
-- **V1:** KSP Permission Controls → Appear on top for `co.phonly.phone`, then `co.phonly.messages` (Play iframe, not a blueprint). Lab-prove over Home, reboot, Home↔School. If Home hides the window, the bubble cannot ship. Status-bar notify is a weak backup (volume 0, no shade).
+**Not (1)–(3), still leftover:** do not reset the 8s debounce on every inbox observer tick; Phone `signature|knownSigner` + both cert SHA-256s so LOOKED/LEFT actually cross apps (today best-effort; different release certs); 1-minute cron jitter; Esper actually delivering `NOTIFY_DEVICE`.
 
-## Status (2026-08-23, session close)
+**Chances:** (1)+(3) without (2) ≈ half — Recents will not steal a live SMS wait and POSTs land more often, but miss-then-text stays silent. (2) without (3) — rules get clearer, Phone still goes quiet for minutes after a call. All three, with (3) as a single HTTP path: **workable as a delayed “you haven’t looked” nudge**, not a guaranteed SMS notification.
 
-This Messages session’s work is done. V2-DEV SHOW / launcher order / CONVERGE belong to the **V1 agent** — do not redo them here.
+**Do not:** treat “browser works” as “Phone can POST”; add another local timer or overlay; fleet CONVERGE; Save KSP; Appear-on-top; put kid numbers in KSP. Do not race Phone git unless asked.
 
-Signed **1.0.0 / `VERSION_CODE` 25** foss release is in the Esper enterprise library as **Messages**, `co.phonly.messages` (app id `e57df4aa-4589-414e-95cd-324c3afb6251`, version row `7c7059ca-beed-40b5-8b04-430c5e161e97`). Esper listed `version_code` oddly as `1.0.0` / `release_name` `0`. **Not SHOWn** on PhonlyV2 - DEV by this agent.
+LOOKED/LEFT between Phone and Messages is one-way until Phone adds `signature|knownSigner` with both certs. Phone Recents LOOKED currently holds Messages pile until Phone LEFT.
 
-AAAAY: operator uninstalled Messages. Debug sideload is gone. Google Messages (`com.google.android.apps.messaging`) is gone. **`ROLE_SMS` is empty.** `co.phonly.phone` and T-Mobile VVM (`com.tmobile.vvm.application`) remain. Samsung stock `com.samsung.android.messaging` was never installed on this unit. Signed library APK can be installed via blueprint CONVERGE **after** V1 SHOWs it (debug cert conflict is cleared).
+**Token / IMEI (not in git):** rebuild after the operator sets Render env. File `%LOCALAPPDATA%\phonly-messages-signing\notification.properties` (or the Phone signing folder):
 
-Identity, branding, and SMS allowlist are in the tree. Launcher icon confirmed on AAAAY (foss debug 25, before uninstall). Allowlist landed both packages; **allowed send and group MMS work**. Deny / inbound silent drop **not proven**. iPhone RCS replies did not arrive while Google Messages was still installed (KSP RCS is off; iPhones cache RCS). Should improve after V1 HIDE/DISABLE Google Messages and the number unregisters.
+```
+token=<NOTIFICATION_SECRET or DEVICE_NOTIFICATION_LAB_TOKEN>
+imei=<14–16 digit IMEI in Mongo>
+```
 
-Contacts dual-push (Phone + Messages AppConfig) was patched in Phonly Code this session; dashboard still needs a **PhonlyV1 deploy** if not already live. **V2-DEV layout is V1 only:** SHOW `co.phonly.messages` **4th**, VVM 2nd, HIDE/DISABLE Google Messages. No fleet CONVERGE. AAAAY-only CONVERGE after SHOW. Then set default SMS again (role is empty).
+Env `NOTIFICATION_SECRET` / `DEVICE_NOTIFICATION_LAB_TOKEN` also work. **Signed 1.2.0 does not bake an IMEI** — it reads this phone’s IMEI at runtime (telephony, then Esper AppConfig `device_imei`). Debug may still use a local `imei=` override. Empty token → log `WOULD_PILE` / `WOULD_LOOKED` / `WOULD_CLEAR` and keep going. SMS must not crash if the API is down (503).
 
-A local `scripts/esper-v2-dev-show-messages.mjs` was started then **deleted** — that job stays in Phonly Code (`scripts/esper/esper-blueprint-v2-dev-vvm-messages.mjs`).
+**Facts only:** `GET /api/device/notification`, `POST .../pile|looked|clear` at `https://phonlyv1.onrender.com`. JSON `{ "imei", "source": "messages" }`. No SMS body, no thread id. No local 15-minute timer. No AlarmManager for this. No Esper key.
+
+**When:** unread SMS/MMS while Messages is not in front → POST pile (**8s** debounce). If that POST fails, retry every **15s** until looked or success (no 2-minute give-up). API does not restart an active wait or a sent card. Open inbox/thread → POST looked + broadcast `NOTIFICATION_LOOKED` to Phone. Home / Recents (not swipe-kill) with unread → POST pile (unless Phone Recents is in front). Inbox empty → POST clear. Boot GET must not overwrite a LOOKED that landed while the GET was in flight. Phone LOOKED holds pile until Phone LEFT.
+
+**Do not:** fleet CONVERGE; Save KSP; Appear-on-top; put kid numbers in KSP.
+
+## Status (2026-08-21)
+
+Identity, branding, and SMS allowlist are in the tree. Default launcher icon is the messenger speech-bubble brandmark (rounded square + bottom-right tail, black shield + white check). Debug APK built as `co.phonly.messages` (`VERSION_NAME` 1.0.0, `VERSION_CODE` 24, foss debug). Device sideload / default-SMS / AppConfig proof is paused until asked — do not sideload, grant `ROLE_SMS`, or upload this APK to Esper.
 
 - Package: `co.phonly.messages`. Namespace pinned to `org.fossify.messages`. Launcher **Messages**. About name Phonly Messages. No `.debug` suffix.
-- First cut: not minified. Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone keystore).
-- Debug APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-25-foss-debug.apk`.
-- Esper-signed release: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\release\messages-25-foss-release.apk`. Upload: `node scripts/esper-upload-library.mjs`.
+- First cut: not minified. **Release** signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, not the Phone release keystore). **Debug** APK uses `%USERPROFILE%\.android\debug.keystore` so it matches Phone debug (signature permission).
+- Cue debug APK: `%USERPROFILE%\AppData\Local\phonly-messages-build\app\outputs\apk\foss\debug\messages-27-foss-debug.apk`.
 - Public repo is live: https://github.com/StephenSwanick/PhonlyMessages (GPL-3). `origin/main` = `a93793bc`. `origin/clone` = `25971576`.
 - Signed Phone 1.0.0 is already on Esper / AAAAY. Messages needs its own AppConfig on this package.
 
@@ -167,7 +188,7 @@ Also:
 - First Esper cut: **do not minify** (`isMinifyEnabled = false`).
 - Signing key: `%LOCALAPPDATA%\phonly-messages-signing\` (not git, not Dropbox, **not** the Phone keystore). Lose it and we cannot update this package in place.
 - ASM rewrite: copy `PhonlyFossifyClassVisitorFactory` from Phone `app/build.gradle.kts` (`org.fossify.` → `co.phonly.`, `yfissof` → `ylnohp.`).
-- `app_restrictions.xml` + manifest `APP_RESTRICTIONS` meta-data. Today: `allowlist_json`. Later: `disable_delete` (or agreed Code key) when DISABLE-DELETE ships.
+- `app_restrictions.xml` + manifest `APP_RESTRICTIONS` meta-data. Today: `allowlist_json`, `device_imei`. Later: `disable_delete` (or agreed Code key) when DISABLE-DELETE ships.
 - Dropbox build dir: Phone uses `%USERPROFILE%\AppData\Local\phonly-phone-build`. Use `%USERPROFILE%\AppData\Local\phonly-messages-build` here (see Phone root `build.gradle.kts`). Do not sync `app/build`, `build`, `.gradle` in Dropbox.
 
 ## Practical build notes
@@ -177,35 +198,16 @@ Also:
 - Release (Esper): `.\gradlew.bat assembleFossRelease`.
 - Test device: AAAAY (Galaxy A16, T-Mobile, V2-DEV). Phone already holds `ROLE_DIALER` there.
 
+## Overlay 1.1.0 (dead — history)
+
+Signed **1.1.0 / 26** shipped `SYSTEM_ALERT_WINDOW` + `UnreadOverlayService` and was lab-proven over Esper Home (2026-08-30). KSP Appear-on-top: **Phone Group 1, Messages Group 2 (Messages last)**. CONVERGE still clears that grant. **Do not revive this path.** Live cue is Esper `NOTIFY_DEVICE`. Keep overlay Kotlin/layouts **out of `main`**.
+
 ## Suggested next
 
-**V1 / Phonly Code agent:**
-
-1. Do **not** re-SHOW Messages or re-CONVERGE AAAAY unless DEV drifted — already **v24.0** + AAAAY CONVERGED to 1.1.0.
-2. Do **not** edit the fleet KSP iframe except to preserve Permission Controls Groups (**Phone first, Messages last**). Debug mode stays off. No kid numbers in KSP. After any Phone reinstall, force a KSP Save + device reboot if Messages’ Appear-on-top toggle drops.
-3. Optional lab: reboot AAAAY with unread still there; Home↔School; cap-3 “more”. Then copy V2 layout to live Homes **only if asked**.
-4. Contacts dual-push / DISABLE-DELETE: unchanged. Do not start DISABLE-DELETE until this APK reads the flag.
-
-**Next Messages session:**
-
-1. Overlay is in 1.1.0. **Monitor** Appear-on-top: both toggles still on after Phone install / reboot; bubble still draws from Home. Remaining lab: reboot re-show, delete-hides, overflow “more”, thread-on-screen hide.
-2. Prove **deny** if not already: non-allowed outgoing → toast **Message not allowed**; inbound not-allowed → silent drop.
-3. Recheck iPhone group replies after Google Messages is disabled (RCS unregister is not instant).
-4. DISABLE-DELETE: not unless asked.
-5. Do not upload or CONVERGE unless asked.
+1. **PhonlyAPI / Phonly Code:** source-scoped `looked` / `clear` (fix 1). Product call on one-card vs new-wait-after-Close vs two locks (fix 2). Do not start that in this APK until Code owns the object shape.
+2. **One HTTP poster** (fix 3): Phone facts → Messages POST, or whichever uid actually resolves `phonlyv1.onrender.com`. Esper hostname allow alone is not enough.
+3. Messages APK hygiene after (1): do not reset the 8s debounce on every inbox observer tick.
+4. Phone: `signature|knownSigner` + both release cert SHA-256s so LOOKED/LEFT cross apps. Do not edit Phone from this folder unless asked.
+5. Do not fleet CONVERGE. Do not Save KSP. Do not merge overlay. Do not start DISABLE-DELETE unless asked.
 
 Do not mix Esper V1=V2 cutover, PhonlyV1 codebase, or Knox Manage into this folder unless asked.
-
-## Unread bubble (build spec, 2026-08-28)
-
-Kid-visible cue until the text is read. No Settings, no shade, no Samsung bubbles.
-
-**Look:** circle ~app-icon size, parked in a corner over Esper Home. Photo or initial. Badge if that thread has multiple unread. Draggable so it does not cover launcher icons. Tap → that `ThreadActivity`. Not a top banner, not a full-width card.
-
-**Stacking:** one bubble per conversation. Same thread updates in place. Cap three on screen; overflow is one “more” bubble → conversation list.
-
-**Code (1.1.0):** `SYSTEM_ALERT_WINDOW` + `WindowManager` overlay (`UnreadOverlayService`). Hook show next to `showReceivedMessageNotification` (SMS + MMS). Hide on existing mark-read / cancel paths (`ThreadActivity.onResume`, `MarkAsReadReceiver`, delete, conversation CAB). No snackbar to overlay Settings. Inbox unread threads only; do not subset-merge distinct groups.
-
-**Grant (done 2026-08-30):** Knox KSP Permission Controls (Play iframe, Premium) → Appear on top, **Phone Group 1 / Messages Group 2**. Blueprint cannot grant this. Keep it on the fleet KSP profile. Signed overlay proven over Esper Home on AAAAY. After Phone 1.1.0 uid swap, Messages toggle dropped until this order was pushed and the unit rebooted. Reboot / Home↔School still to prove.
-
-**If Home eats the overlay:** stop. There is no kid-safe fallback. A status-bar notification is not the product (fleet notification volume is 0).

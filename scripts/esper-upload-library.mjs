@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const dryRun = process.argv.includes('--dry-run');
 const PKG = 'co.phonly.messages';
-const VERSION_CODE = 26;
+const VERSION_CODE = 31;
 const APK = join(
   process.env.LOCALAPPDATA || join(process.env.USERPROFILE, 'AppData/Local'),
   `phonly-messages-build/app/outputs/apk/foss/release/messages-${VERSION_CODE}-foss-release.apk`,
@@ -152,4 +152,4 @@ if (!catalog) {
   process.exit(1);
 }
 console.log('library after', catalog.id, catalog.package_name);
-console.log('Ready to SHOW on PhonlyV2 - DEV. Do not CONVERGE over the debug sideload on AAAAY (different cert).');
+console.log('Ready to SHOW on PhonlyV2 - DEV. CONVERGE AAAAY only after debug sideload is gone.');

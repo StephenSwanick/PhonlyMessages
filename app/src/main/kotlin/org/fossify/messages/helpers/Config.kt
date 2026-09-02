@@ -151,12 +151,4 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(KEEP_CONVERSATIONS_ARCHIVED, false)
         set(keepConversationsArchived) = prefs.edit()
             .putBoolean(KEEP_CONVERSATIONS_ARCHIVED, keepConversationsArchived).apply()
-
-    var unreadOverlayX: Int
-        get() = prefs.getInt(UNREAD_OVERLAY_X, Int.MIN_VALUE)
-        set(unreadOverlayX) = prefs.edit().putInt(UNREAD_OVERLAY_X, unreadOverlayX).apply()
-
-    var unreadOverlayY: Int
-        get() = prefs.getInt(UNREAD_OVERLAY_Y, Int.MIN_VALUE)
-        set(unreadOverlayY) = prefs.edit().putInt(UNREAD_OVERLAY_Y, unreadOverlayY).apply()
 }
