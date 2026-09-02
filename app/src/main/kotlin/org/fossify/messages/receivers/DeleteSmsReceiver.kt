@@ -9,6 +9,7 @@ import org.fossify.messages.extensions.deleteMessage
 import org.fossify.messages.extensions.updateLastConversationMessage
 import org.fossify.messages.helpers.IS_MMS
 import org.fossify.messages.helpers.MESSAGE_ID
+import org.fossify.messages.helpers.NotificationCue
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
@@ -25,6 +26,7 @@ class DeleteSmsReceiver : BroadcastReceiver() {
             context.updateLastConversationMessage(threadId)
             refreshMessages()
             refreshConversations()
+            NotificationCue.onInboxChanged(context)
         }
     }
 }

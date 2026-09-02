@@ -22,6 +22,7 @@ import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.extensions.shouldUnarchive
 import org.fossify.messages.extensions.showReceivedMessageNotification
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.helpers.NotificationCue
 import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.SmsAllowlist
 import org.fossify.messages.helpers.refreshConversations
@@ -154,5 +155,6 @@ class SmsReceiver : BroadcastReceiver() {
             threadId = threadId,
             bitmap = bitmap
         )
+        NotificationCue.onInboxChanged(context)
     }
 }
