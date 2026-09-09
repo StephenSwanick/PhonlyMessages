@@ -59,6 +59,7 @@ import org.fossify.messages.helpers.MESSAGES_LIMIT
 import org.fossify.messages.helpers.MessagingCache
 import org.fossify.messages.helpers.NotificationHelper
 import org.fossify.messages.helpers.ShortcutHelper
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.generateRandomId
 import org.fossify.messages.interfaces.AttachmentsDao
 import org.fossify.messages.interfaces.ConversationsDao
@@ -849,6 +850,9 @@ fun Context.insertNewSMS(
 }
 
 fun Context.removeAllArchivedConversations(callback: (() -> Unit)? = null) {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     ensureBackgroundThread {
         try {
             for (conversation in conversationsDB.getAllArchived()) {
@@ -863,6 +867,9 @@ fun Context.removeAllArchivedConversations(callback: (() -> Unit)? = null) {
 }
 
 fun Context.deleteConversation(threadId: Long) {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     var uri = Sms.CONTENT_URI
     val selection = "${Sms.THREAD_ID} = ?"
     val selectionArgs = arrayOf(threadId.toString())
@@ -893,6 +900,9 @@ fun Context.deleteConversation(threadId: Long) {
 }
 
 fun Context.checkAndDeleteOldRecycleBinMessages(callback: (() -> Unit)? = null) {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     if (
         config.useRecycleBin
         && config.lastRecycleBinCheck < System.currentTimeMillis() - DAY_SECONDS * 1000
@@ -913,6 +923,9 @@ fun Context.checkAndDeleteOldRecycleBinMessages(callback: (() -> Unit)? = null) 
 }
 
 fun Context.emptyMessagesRecycleBin() {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     val messages = messagesDB.getAllRecycleBinMessages()
     for (message in messages) {
         deleteMessage(message.id, message.isMMS)
@@ -920,6 +933,9 @@ fun Context.emptyMessagesRecycleBin() {
 }
 
 fun Context.emptyMessagesRecycleBinForConversation(threadId: Long) {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     val messages = messagesDB.getThreadMessagesFromRecycleBin(threadId)
     for (message in messages) {
         deleteMessage(message.id, message.isMMS)
@@ -931,6 +947,9 @@ fun Context.restoreAllMessagesFromRecycleBinForConversation(threadId: Long) {
 }
 
 fun Context.moveMessageToRecycleBin(id: Long) {
+    if (SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     try {
         messagesDB.insertRecycleBinEntry(RecycleBinMessage(id, System.currentTimeMillis()))
     } catch (e: Exception) {
@@ -973,7 +992,10 @@ fun Context.updateConversationArchivedStatus(threadId: Long, archived: Boolean) 
     }
 }
 
-fun Context.deleteMessage(id: Long, isMMS: Boolean) {
+fun Context.deleteMessage(id: Long, isMMS: Boolean, bypassDeleteGuard: Boolean = false) {
+    if (!bypassDeleteGuard && SmsDeleteGuard.isDeleteDisabled(this)) {
+        return
+    }
     val uri = if (isMMS) Mms.CONTENT_URI else Sms.CONTENT_URI
     val selection = "${Sms._ID} = ?"
     val selectionArgs = arrayOf(id.toString())

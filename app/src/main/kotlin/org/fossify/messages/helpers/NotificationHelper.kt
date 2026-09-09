@@ -163,7 +163,7 @@ class NotificationHelper(private val context: Context) {
             markAsReadPendingIntent
         )
             .setChannelId(notificationChannelId)
-        if (isNoReplySms) {
+        if (isNoReplySms && !SmsDeleteGuard.isDeleteDisabled(context)) {
             builder.addAction(
                 org.fossify.commons.R.drawable.ic_delete_vector,
                 context.getString(org.fossify.commons.R.string.delete),

@@ -7,6 +7,18 @@
         android:restrictionType="string"
         android:defaultValue="" />
     <restriction
+        android:key="allowlist_enabled"
+        android:title="@string/allowlist_enabled_title"
+        android:description="@string/allowlist_enabled_description"
+        android:restrictionType="bool"
+        android:defaultValue="true" />
+    <restriction
+        android:key="disable_delete"
+        android:title="@string/disable_delete_title"
+        android:description="@string/disable_delete_description"
+        android:restrictionType="bool"
+        android:defaultValue="true" />
+    <restriction
         android:key="device_imei"
         android:title="@string/device_imei_title"
         android:description="@string/device_imei_description"

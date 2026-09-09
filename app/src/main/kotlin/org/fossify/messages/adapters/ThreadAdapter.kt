@@ -71,6 +71,7 @@ import org.fossify.messages.extensions.launchViewIntent
 import org.fossify.messages.extensions.startContactDetailsIntent
 import org.fossify.messages.extensions.subscriptionManagerCompat
 import org.fossify.messages.helpers.EXTRA_VCARD_URI
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.THREAD_DATE_TIME
 import org.fossify.messages.helpers.THREAD_RECEIVED_MESSAGE
 import org.fossify.messages.helpers.THREAD_SENT_MESSAGE
@@ -131,6 +132,7 @@ class ThreadAdapter(
             findItem(R.id.cab_forward_message).isVisible = isOneItemSelected
             findItem(R.id.cab_select_text).isVisible = isOneItemSelected && hasText
             findItem(R.id.cab_properties).isVisible = isOneItemSelected
+            findItem(R.id.cab_delete).isVisible = !SmsDeleteGuard.isDeleteDisabled(activity)
             findItem(R.id.cab_restore).isVisible = isRecycleBin
         }
     }
@@ -146,7 +148,10 @@ class ThreadAdapter(
             R.id.cab_share -> shareText()
             R.id.cab_forward_message -> forwardMessage()
             R.id.cab_select_text -> selectText()
-            R.id.cab_delete -> askConfirmDelete()
+            R.id.cab_delete -> {
+                if (SmsDeleteGuard.isDeleteDisabled(activity)) return
+                askConfirmDelete()
+            }
             R.id.cab_restore -> askConfirmRestore()
             R.id.cab_select_all -> selectAll()
             R.id.cab_properties -> showMessageDetails()
@@ -271,6 +276,9 @@ class ThreadAdapter(
     }
 
     private fun askConfirmDelete() {
+        if (SmsDeleteGuard.isDeleteDisabled(activity)) {
+            return
+        }
         val itemsCnt = selectedKeys.size
 
         // not sure how we can get UnknownFormatConversionException here, so show the error and hope that someone reports it

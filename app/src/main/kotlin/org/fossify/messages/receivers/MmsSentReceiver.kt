@@ -42,7 +42,7 @@ class MmsSentReceiver : SendStatusReceiver() {
 
         // In case of resent message, delete original to prevent duplication
         if (originalResentMessageId != -1L) {
-            context.deleteMessage(originalResentMessageId, true)
+            context.deleteMessage(originalResentMessageId, true, bypassDeleteGuard = true)
         }
 
         val filePath = intent.getStringExtra(EXTRA_FILE_PATH)

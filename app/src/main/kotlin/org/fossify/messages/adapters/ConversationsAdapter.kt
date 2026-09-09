@@ -25,6 +25,7 @@ import org.fossify.messages.extensions.markThreadMessagesRead
 import org.fossify.messages.extensions.markThreadMessagesUnread
 import org.fossify.messages.extensions.renameConversation
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.messaging.isShortCodeWithLetters
 import org.fossify.messages.models.Conversation
@@ -59,6 +60,7 @@ class ConversationsAdapter(
             findItem(R.id.cab_mark_as_read).isVisible = selectedItems.any { !it.read }
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }
             findItem(R.id.cab_archive).isVisible = archiveAvailable
+            findItem(R.id.cab_delete).isVisible = !SmsDeleteGuard.isDeleteDisabled(activity)
             checkPinBtnVisibility(this)
         }
     }
@@ -74,7 +76,10 @@ class ConversationsAdapter(
             R.id.cab_block_number -> tryBlocking()
             R.id.cab_dial_number -> dialNumber()
             R.id.cab_copy_number -> copyNumberToClipboard()
-            R.id.cab_delete -> askConfirmDelete()
+            R.id.cab_delete -> {
+                if (SmsDeleteGuard.isDeleteDisabled(activity)) return
+                askConfirmDelete()
+            }
             R.id.cab_archive -> askConfirmArchive()
             R.id.cab_rename_conversation -> renameConversation(selectedItems.first())
             R.id.cab_conversation_details ->
@@ -143,6 +148,9 @@ class ConversationsAdapter(
     }
 
     private fun askConfirmDelete() {
+        if (SmsDeleteGuard.isDeleteDisabled(activity)) {
+            return
+        }
         val itemsCnt = selectedKeys.size
         val items = resources.getQuantityString(R.plurals.delete_conversations, itemsCnt, itemsCnt)
 
@@ -202,7 +210,7 @@ class ConversationsAdapter(
     }
 
     private fun deleteConversations() {
-        if (selectedKeys.isEmpty()) {
+        if (selectedKeys.isEmpty() || SmsDeleteGuard.isDeleteDisabled(activity)) {
             return
         }
 

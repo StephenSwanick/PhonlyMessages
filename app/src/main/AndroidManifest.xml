@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" />
     <uses-permission android:name="co.phonly.permission.NOTIFICATION" />
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -184,6 +186,11 @@
         </service>
 
         <service android:name="com.android.mms.transaction.TransactionService" />
+
+        <service
+            android:name=".services.DeviceNotificationPostService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <receiver android:name=".receivers.SmsStatusSentReceiver" />
 

@@ -19,6 +19,7 @@ import org.fossify.messages.databinding.ActivityArchivedConversationsBinding
 import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.removeAllArchivedConversations
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
 import org.fossify.messages.models.Conversation
@@ -61,7 +62,10 @@ class ArchivedConversationsActivity : SimpleActivity() {
         binding.archiveToolbar.inflateMenu(R.menu.archive_menu)
         binding.archiveToolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.empty_archive -> removeAll()
+                R.id.empty_archive -> {
+                    if (SmsDeleteGuard.isDeleteDisabled(this)) return@setOnMenuItemClickListener true
+                    removeAll()
+                }
                 else -> return@setOnMenuItemClickListener false
             }
             return@setOnMenuItemClickListener true
@@ -70,7 +74,8 @@ class ArchivedConversationsActivity : SimpleActivity() {
 
     private fun updateOptionsMenu(conversations: ArrayList<Conversation>) {
         binding.archiveToolbar.menu.apply {
-            findItem(R.id.empty_archive).isVisible = conversations.isNotEmpty()
+            findItem(R.id.empty_archive).isVisible =
+                conversations.isNotEmpty() && !SmsDeleteGuard.isDeleteDisabled(this@ArchivedConversationsActivity)
         }
     }
 
@@ -95,6 +100,9 @@ class ArchivedConversationsActivity : SimpleActivity() {
     }
 
     private fun removeAll() {
+        if (SmsDeleteGuard.isDeleteDisabled(this)) {
+            return
+        }
         ConfirmationDialog(
             activity = this,
             message = "",

@@ -179,6 +179,7 @@ import org.fossify.messages.helpers.THREAD_NUMBER
 import org.fossify.messages.helpers.THREAD_TEXT
 import org.fossify.messages.helpers.THREAD_TITLE
 import org.fossify.messages.helpers.SmsAllowlist
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.generateRandomId
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
@@ -357,7 +358,8 @@ class ThreadActivity : SimpleActivity() {
         val firstPhoneNumber = participants.firstOrNull()?.phoneNumbers?.firstOrNull()?.value
         val archiveAvailable = config.isArchiveAvailable
         binding.threadToolbar.menu.apply {
-            findItem(R.id.delete).isVisible = threadItems.isNotEmpty()
+            findItem(R.id.delete).isVisible =
+                threadItems.isNotEmpty() && !SmsDeleteGuard.isDeleteDisabled(this@ThreadActivity)
             findItem(R.id.restore).isVisible = threadItems.isNotEmpty() && isRecycleBin
             findItem(R.id.archive).isVisible =
                 threadItems.isNotEmpty() && conversation?.isArchived == false && !isRecycleBin && archiveAvailable
@@ -392,7 +394,10 @@ class ThreadActivity : SimpleActivity() {
     private fun handleMenuItemAction(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
             R.id.block_number -> tryBlocking()
-            R.id.delete -> askConfirmDelete()
+            R.id.delete -> {
+                if (SmsDeleteGuard.isDeleteDisabled(this)) return true
+                askConfirmDelete()
+            }
             R.id.restore -> askConfirmRestoreAll()
             R.id.archive -> archiveConversation()
             R.id.unarchive -> unarchiveConversation()
@@ -702,6 +707,9 @@ class ThreadActivity : SimpleActivity() {
         toRecycleBin: Boolean,
         fromRecycleBin: Boolean,
     ) {
+        if (SmsDeleteGuard.isDeleteDisabled(this) && !fromRecycleBin) {
+            return
+        }
         val messagesToRemoveSet = messagesToRemove.toSet()
         val deletePosition = threadItems.indexOf(messagesToRemove.first())
         messages = messages.toSortedMessages()
@@ -1178,6 +1186,9 @@ class ThreadActivity : SimpleActivity() {
     }
 
     private fun askConfirmDelete() {
+        if (SmsDeleteGuard.isDeleteDisabled(this)) {
+            return
+        }
         val confirmationMessage = R.string.delete_whole_conversation_confirmation
         ConfirmationDialog(this, getString(confirmationMessage)) {
             ensureBackgroundThread {

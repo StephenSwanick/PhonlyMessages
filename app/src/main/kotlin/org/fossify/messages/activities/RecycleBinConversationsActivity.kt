@@ -18,6 +18,7 @@ import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.emptyMessagesRecycleBin
 import org.fossify.messages.helpers.IS_RECYCLE_BIN
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
 import org.fossify.messages.models.Conversation
@@ -60,7 +61,10 @@ class RecycleBinConversationsActivity : SimpleActivity() {
         binding.recycleBinToolbar.inflateMenu(R.menu.recycle_bin_menu)
         binding.recycleBinToolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.empty_recycle_bin -> removeAll()
+                R.id.empty_recycle_bin -> {
+                    if (SmsDeleteGuard.isDeleteDisabled(this)) return@setOnMenuItemClickListener true
+                    removeAll()
+                }
                 else -> return@setOnMenuItemClickListener false
             }
             return@setOnMenuItemClickListener true
@@ -69,7 +73,8 @@ class RecycleBinConversationsActivity : SimpleActivity() {
 
     private fun updateOptionsMenu(conversations: ArrayList<Conversation>) {
         binding.recycleBinToolbar.menu.apply {
-            findItem(R.id.empty_recycle_bin).isVisible = conversations.isNotEmpty()
+            findItem(R.id.empty_recycle_bin).isVisible =
+                conversations.isNotEmpty() && !SmsDeleteGuard.isDeleteDisabled(this@RecycleBinConversationsActivity)
         }
     }
 
@@ -95,6 +100,9 @@ class RecycleBinConversationsActivity : SimpleActivity() {
     }
 
     private fun removeAll() {
+        if (SmsDeleteGuard.isDeleteDisabled(this)) {
+            return
+        }
         ConfirmationDialog(
             activity = this,
             message = "",

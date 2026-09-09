@@ -16,6 +16,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.extensions.getUnreadCountsByThread
+import org.fossify.messages.services.DeviceNotificationPostService
 
 /**
  * Kid unread cue: report facts to PhonlyAPI. API + cron send Esper NOTIFY_DEVICE.
@@ -29,9 +30,10 @@ object NotificationCue {
 
     private const val TAG = DeviceNotificationApi.TAG
     private const val PREFS = "phonly_notification_cue"
-    private const val KEY_ALREADY_SENT = "alreadySent"
-    private const val KEY_WAITING_SINCE = "waitingSince"
-    private const val KEY_PILED_THIS_CYCLE = "piledThisCycle"
+    private const val KEY_CARD_STATUS = "cardStatus"
+    private const val KEY_REMINDER_STARTED_AT = "reminderStartedAt"
+    private const val KEY_CARD_SHOWN_AT = "cardShownAt"
+    private const val KEY_QUIET_UNTIL_INCOMING = "quietUntilIncoming"
     private const val PILE_DEBOUNCE_MS = 8_000L
     private const val PILE_RETRY_MS = 15_000L
 
@@ -45,12 +47,13 @@ object NotificationCue {
     @Volatile private var started = false
     @Volatile private var appContext: Context? = null
     @Volatile private var messagesForeground = false
-    @Volatile private var phoneLooking = false
-    @Volatile private var alreadySent = false
-    @Volatile private var waitingSince: String? = null
-    @Volatile private var piledThisCycle = false
+    @Volatile private var cardStatus = DeviceNotificationApi.CardStatus.IDLE
+    @Volatile private var reminderStartedAt: String? = null
+    @Volatile private var cardShownAt: String? = null
+    @Volatile private var quietUntilIncoming = false
     @Volatile private var lookGeneration = 0
     @Volatile private var networkWatching = false
+    @Volatile private var pileDebouncePending = false
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
@@ -100,15 +103,38 @@ object NotificationCue {
         ensureBackgroundThread { onProcessStart(app) }
     }
 
+    fun onIncomingUnread(context: Context) {
+        val app = context.applicationContext
+        if (isLooking()) {
+            // Texts that arrive while Messages is in front must not arm a
+            // reminder on Home — including after the inbox was emptied in
+            // this same visit. Re-assert hold; do not release it.
+            quietUntilIncoming = true
+            persist(app)
+            Log.i(TAG, "incoming; Messages in front, hold")
+            onInboxChanged(app)
+            return
+        }
+        quietUntilIncoming = false
+        persist(app)
+        Log.i(TAG, "incoming; hold released")
+        onInboxChanged(app)
+    }
+
     fun onInboxChanged(context: Context) {
         try {
             val app = context.applicationContext
             if (!hasUnread(app)) {
+                quietUntilIncoming = false
                 cancelPileDebounce()
                 postClear(app)
                 return
             }
             if (isLooking()) {
+                return
+            }
+            if (quietUntilIncoming) {
+                Log.i(TAG, "inbox tick; hold")
                 return
             }
             schedulePile(app)
@@ -118,27 +144,19 @@ object NotificationCue {
     }
 
     fun onPhoneLooked() {
-        phoneLooking = true
-        cancelPileDebounce()
-        Log.i(TAG, "Phone LOOKED; hold pile")
+        Log.i(TAG, "Phone LOOKED ignored; Recents is not the inbox")
     }
 
-    fun onPhoneLeft(context: Context) {
-        phoneLooking = false
-        Log.i(TAG, "Phone LEFT")
-        val app = context.applicationContext
-        ensureBackgroundThread {
-            if (hasUnread(app) && !isLooking()) {
-                schedulePile(app)
-            }
-        }
+    fun onPhoneLeft() {
+        Log.i(TAG, "Phone LEFT ignored")
     }
 
     private fun onMessagesForeground(context: Context) {
         messagesForeground = true
-        phoneLooking = false
+        quietUntilIncoming = true
         lookGeneration += 1
         cancelPileDebounce()
+        persist(context)
         notifyPhone(context, ACTION_LOOKED)
         ensureBackgroundThread { postLooked(context) }
     }
@@ -148,8 +166,12 @@ object NotificationCue {
         notifyPhone(context, ACTION_LEFT)
         ensureBackgroundThread {
             if (!hasUnread(context)) {
+                quietUntilIncoming = false
                 postClear(context)
-            } else if (!phoneLooking) {
+            } else if (quietUntilIncoming) {
+                Log.i(TAG, "leave; hold, no pile")
+                persist(context)
+            } else {
                 schedulePile(context)
             }
         }
@@ -165,24 +187,32 @@ object NotificationCue {
         }
         if (result.unavailable) {
             Log.w(TAG, "GET unavailable; unread=$unread")
-            if (unread && !isLooking()) {
+            if (unread && !isLooking() && !quietUntilIncoming) {
                 schedulePile(context)
             } else if (!unread) {
                 postClear(context)
+            } else if (quietUntilIncoming) {
+                Log.i(TAG, "boot: looked, wait for incoming")
             }
             return
         }
         applyServer(context, result.state)
         if (!unread) {
+            quietUntilIncoming = false
             postClear(context)
             return
         }
-        if (alreadySent) {
-            Log.i(TAG, "boot: alreadySent; do nothing")
+        if (cardStatus == DeviceNotificationApi.CardStatus.SHOWN) {
+            Log.i(TAG, "boot: shown; do nothing")
             return
         }
-        if (waitingSince != null) {
+        if (cardStatus == DeviceNotificationApi.CardStatus.WAITING) {
             Log.i(TAG, "boot: already waiting")
+            persist(context)
+            return
+        }
+        if (quietUntilIncoming) {
+            Log.i(TAG, "boot: looked, wait for incoming")
             persist(context)
             return
         }
@@ -190,7 +220,6 @@ object NotificationCue {
     }
 
     private fun isLooking(): Boolean {
-        if (phoneLooking) return true
         if (messagesForeground) return true
         return try {
             ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
@@ -200,33 +229,50 @@ object NotificationCue {
     }
 
     private fun schedulePile(context: Context) {
+        val app = context.applicationContext
         synchronized(lock) {
             if (isLooking()) return
+            if (quietUntilIncoming) {
+                Log.i(TAG, "pile skipped; hold")
+                return
+            }
             if (!hasUnread(context)) return
-            // Do not skip on local alreadySent / piledThisCycle / waitingSince.
-            // Those flags go stale after LOOKED (boot GET can re-apply the old
-            // card). Extra POSTs are harmless: the API does not restart a wait.
-            // Home is enough; Recents swipe-kill is not required.
-            appContext = context.applicationContext
-            mainHandler.removeCallbacks(pileRunnable)
+            appContext = app
+            if (pileDebouncePending) {
+                Log.i(TAG, "pile debounce kept")
+                return
+            }
+            pileDebouncePending = true
             mainHandler.postDelayed(pileRunnable, PILE_DEBOUNCE_MS)
-            Log.i(TAG, "pile debounced ${PILE_DEBOUNCE_MS}ms")
         }
+        startPostForeground(app)
+        Log.i(TAG, "pile debounced ${PILE_DEBOUNCE_MS}ms")
     }
 
     private fun cancelPileDebounce() {
-        mainHandler.removeCallbacks(pileRunnable)
-        appContext?.let { unwatchNetwork(it) }
+        synchronized(lock) {
+            pileDebouncePending = false
+            mainHandler.removeCallbacks(pileRunnable)
+            appContext?.let { app ->
+                unwatchNetwork(app)
+                stopPostForeground(app)
+            }
+        }
     }
 
     private fun onNetworkMaybeUp() {
         val app = appContext ?: return
-        if (isLooking() || !hasUnread(app)) {
+        if (isLooking() || quietUntilIncoming || !hasUnread(app)) {
             return
         }
-        Log.i(TAG, "network up; pile now")
-        mainHandler.removeCallbacks(pileRunnable)
-        mainHandler.post(pileRunnable)
+        synchronized(lock) {
+            if (pileDebouncePending) {
+                Log.i(TAG, "network up; pile wait kept")
+                return
+            }
+        }
+        Log.i(TAG, "network up; pile debounce")
+        schedulePile(app)
     }
 
     private fun watchNetwork(context: Context) {
@@ -258,23 +304,34 @@ object NotificationCue {
     }
 
     private fun schedulePileRetry(context: Context) {
+        val app = context.applicationContext
         synchronized(lock) {
-            if (isLooking() || !hasUnread(context)) {
-                unwatchNetwork(context)
+            if (isLooking() || quietUntilIncoming || !hasUnread(context)) {
+                unwatchNetwork(app)
+                stopPostForeground(app)
                 return
             }
-            appContext = context.applicationContext
-            watchNetwork(context)
+            appContext = app
+            watchNetwork(app)
+            pileDebouncePending = true
             mainHandler.removeCallbacks(pileRunnable)
             mainHandler.postDelayed(pileRunnable, PILE_RETRY_MS)
-            Log.i(TAG, "pile retry ${PILE_RETRY_MS}ms (until looked or POST)")
         }
+        startPostForeground(app)
+        Log.i(TAG, "pile retry ${PILE_RETRY_MS}ms (until looked or POST)")
     }
 
     private fun flushPile(context: Context) {
         synchronized(lock) {
-            if (isLooking()) return
-            if (!hasUnread(context)) return
+            pileDebouncePending = false
+            if (isLooking() || quietUntilIncoming) {
+                stopPostForeground(context)
+                return
+            }
+            if (!hasUnread(context)) {
+                stopPostForeground(context)
+                return
+            }
         }
         val gen = lookGeneration
         val result = DeviceNotificationApi.pile(context)
@@ -290,10 +347,13 @@ object NotificationCue {
             Log.w(TAG, "WOULD_PILE")
             if (result.retryable) {
                 schedulePileRetry(context)
+            } else {
+                stopPostForeground(context)
             }
         } else {
             Log.i(TAG, "POST pile")
             unwatchNetwork(context)
+            stopPostForeground(context)
         }
         if (result.state != null) {
             applyServer(context, result.state)
@@ -310,9 +370,7 @@ object NotificationCue {
         } else {
             Log.i(TAG, "POST looked")
         }
-        alreadySent = false
-        waitingSince = null
-        piledThisCycle = false
+        applyIdle()
         if (result.state != null) {
             applyServer(context, result.state)
         } else {
@@ -321,7 +379,9 @@ object NotificationCue {
     }
 
     private fun postClear(context: Context) {
-        if (!alreadySent && waitingSince == null && !piledThisCycle) {
+        quietUntilIncoming = false
+        if (cardStatus == DeviceNotificationApi.CardStatus.IDLE) {
+            persist(context)
             return
         }
         cancelPileDebounce()
@@ -331,21 +391,27 @@ object NotificationCue {
         } else {
             Log.i(TAG, "POST clear")
         }
-        alreadySent = false
-        waitingSince = null
-        piledThisCycle = false
+        applyIdle()
         persist(context)
+    }
+
+    private fun applyIdle() {
+        cardStatus = DeviceNotificationApi.CardStatus.IDLE
+        reminderStartedAt = null
     }
 
     private fun applyServer(context: Context, state: DeviceNotificationApi.NotificationState?) {
         if (state == null) {
-            alreadySent = false
-            waitingSince = null
-            piledThisCycle = false
+            applyIdle()
+            cardShownAt = null
         } else {
-            alreadySent = state.alreadySent
-            waitingSince = state.waitingSince
-            piledThisCycle = state.alreadySent || state.waitingSince != null
+            cardStatus = state.cardStatus
+            reminderStartedAt = if (state.cardStatus == DeviceNotificationApi.CardStatus.WAITING) {
+                state.reminderStartedAt
+            } else {
+                null
+            }
+            cardShownAt = state.cardShownAt
         }
         persist(context)
     }
@@ -359,6 +425,16 @@ object NotificationCue {
         }
     }
 
+    private fun startPostForeground(context: Context) {
+        val app = context.applicationContext
+        mainHandler.post { DeviceNotificationPostService.start(app) }
+    }
+
+    private fun stopPostForeground(context: Context) {
+        val app = context.applicationContext
+        mainHandler.post { DeviceNotificationPostService.stop(app) }
+    }
+
     private fun notifyPhone(context: Context, action: String) {
         try {
             val intent = Intent(action).setPackage(PHONE_PACKAGE)
@@ -370,16 +446,24 @@ object NotificationCue {
 
     private fun loadPrefs(context: Context) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        alreadySent = prefs.getBoolean(KEY_ALREADY_SENT, false)
-        waitingSince = prefs.getString(KEY_WAITING_SINCE, null)
-        piledThisCycle = prefs.getBoolean(KEY_PILED_THIS_CYCLE, false)
+        cardStatus = DeviceNotificationApi.CardStatus.fromWire(prefs.getString(KEY_CARD_STATUS, null))
+        reminderStartedAt = prefs.getString(KEY_REMINDER_STARTED_AT, null)
+        cardShownAt = prefs.getString(KEY_CARD_SHOWN_AT, null)
+        if (cardStatus != DeviceNotificationApi.CardStatus.WAITING) {
+            reminderStartedAt = null
+        }
+        quietUntilIncoming = prefs.getBoolean(KEY_QUIET_UNTIL_INCOMING, false)
     }
 
     private fun persist(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putBoolean(KEY_ALREADY_SENT, alreadySent)
-            .putString(KEY_WAITING_SINCE, waitingSince)
-            .putBoolean(KEY_PILED_THIS_CYCLE, piledThisCycle)
+            .putString(KEY_CARD_STATUS, cardStatus.wire)
+            .putString(KEY_REMINDER_STARTED_AT, reminderStartedAt)
+            .putString(KEY_CARD_SHOWN_AT, cardShownAt)
+            .putBoolean(KEY_QUIET_UNTIL_INCOMING, quietUntilIncoming)
+            .remove("alreadySent")
+            .remove("waitingSince")
+            .remove("piledThisCycle")
             .apply()
     }
 }

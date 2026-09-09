@@ -9,7 +9,7 @@ class NotificationCueReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             NotificationCue.ACTION_LOOKED -> NotificationCue.onPhoneLooked()
-            NotificationCue.ACTION_LEFT -> NotificationCue.onPhoneLeft(context)
+            NotificationCue.ACTION_LEFT -> NotificationCue.onPhoneLeft()
         }
     }
 }

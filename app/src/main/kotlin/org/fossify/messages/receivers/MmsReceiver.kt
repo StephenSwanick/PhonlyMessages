@@ -102,6 +102,6 @@ class MmsReceiver : MmsReceivedReceiver() {
         }
         refreshMessages()
         refreshConversations()
-        NotificationCue.onInboxChanged(context)
+        NotificationCue.onIncomingUnread(context)
     }
 }

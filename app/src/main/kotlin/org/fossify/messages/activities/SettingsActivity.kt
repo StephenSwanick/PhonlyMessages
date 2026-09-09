@@ -49,6 +49,7 @@ import org.fossify.messages.helpers.LOCK_SCREEN_NOTHING
 import org.fossify.messages.helpers.LOCK_SCREEN_SENDER
 import org.fossify.messages.helpers.LOCK_SCREEN_SENDER_MESSAGE
 import org.fossify.messages.helpers.MessagesImporter
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.refreshConversations
 import java.util.Locale
 import kotlin.system.exitProcess
@@ -360,6 +361,17 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupUseRecycleBin() = binding.apply {
+        val deleteDisabled = SmsDeleteGuard.isDeleteDisabled(this@SettingsActivity)
+        settingsRecycleBinLabel.beGone()
+        settingsUseRecycleBinHolder.beGone()
+        settingsEmptyRecycleBinHolder.beGone()
+        settingsRecycleBinDivider.beGone()
+        if (deleteDisabled) {
+            return@apply
+        }
+        settingsRecycleBinLabel.beVisible()
+        settingsUseRecycleBinHolder.beVisible()
+        settingsRecycleBinDivider.beVisible()
         updateRecycleBinButtons()
         settingsUseRecycleBin.isChecked = config.useRecycleBin
         settingsUseRecycleBin.text = formatWithDeprecatedBadge(
@@ -377,6 +389,9 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupEmptyRecycleBin() = binding.apply {
+        if (SmsDeleteGuard.isDeleteDisabled(this@SettingsActivity)) {
+            return@apply
+        }
         ensureBackgroundThread {
             recycleBinMessages = messagesDB.getArchivedCount()
             runOnUiThread {

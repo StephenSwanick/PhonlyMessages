@@ -155,6 +155,6 @@ class SmsReceiver : BroadcastReceiver() {
             threadId = threadId,
             bitmap = bitmap
         )
-        NotificationCue.onInboxChanged(context)
+        NotificationCue.onIncomingUnread(context)
     }
 }

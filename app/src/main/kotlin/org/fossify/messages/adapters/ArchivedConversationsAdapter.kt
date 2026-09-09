@@ -9,6 +9,7 @@ import org.fossify.messages.R
 import org.fossify.messages.activities.SimpleActivity
 import org.fossify.messages.extensions.deleteConversation
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.models.Conversation
 
@@ -17,7 +18,9 @@ class ArchivedConversationsAdapter(
 ) : BaseConversationsAdapter(activity, recyclerView, onRefresh, itemClick) {
     override fun getActionMenuId() = R.menu.cab_archived_conversations
 
-    override fun prepareActionMode(menu: Menu) {}
+    override fun prepareActionMode(menu: Menu) {
+        menu.findItem(R.id.cab_delete).isVisible = !SmsDeleteGuard.isDeleteDisabled(activity)
+    }
 
     override fun actionItemPressed(id: Int) {
         if (selectedKeys.isEmpty()) {
@@ -25,13 +28,19 @@ class ArchivedConversationsAdapter(
         }
 
         when (id) {
-            R.id.cab_delete -> askConfirmDelete()
+            R.id.cab_delete -> {
+                if (SmsDeleteGuard.isDeleteDisabled(activity)) return
+                askConfirmDelete()
+            }
             R.id.cab_unarchive -> unarchiveConversation()
             R.id.cab_select_all -> selectAll()
         }
     }
 
     private fun askConfirmDelete() {
+        if (SmsDeleteGuard.isDeleteDisabled(activity)) {
+            return
+        }
         val itemsCnt = selectedKeys.size
         val items = resources.getQuantityString(R.plurals.delete_conversations, itemsCnt, itemsCnt)
 
@@ -46,7 +55,7 @@ class ArchivedConversationsAdapter(
     }
 
     private fun deleteConversations() {
-        if (selectedKeys.isEmpty()) {
+        if (selectedKeys.isEmpty() || SmsDeleteGuard.isDeleteDisabled(activity)) {
             return
         }
 
