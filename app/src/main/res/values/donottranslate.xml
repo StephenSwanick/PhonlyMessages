@@ -7,7 +7,7 @@
     <string name="allowlist_enabled_title">Allowlist enabled</string>
     <string name="allowlist_enabled_description">Only false allows all SMS. Missing or true keeps empty-list as emergency only.</string>
     <string name="disable_delete_title">Disable delete</string>
-    <string name="disable_delete_description">Only false allows deleting messages. Missing or true keeps delete off so kids cannot hide texts.</string>
+    <string name="disable_delete_description">Only false allows deleting or archiving messages. Missing or true keeps both off so kids cannot hide texts.</string>
     <string name="device_imei_title">Device IMEI</string>
     <string name="device_imei_description">14–16 digit IMEI from Mongo. Used only to report pile/looked/clear. Not shown to the kid.</string>
 

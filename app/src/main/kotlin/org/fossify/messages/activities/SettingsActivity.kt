@@ -308,6 +308,16 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupKeepConversationsArchived() = binding.apply {
+        settingsArchivedMessagesLabel.beGone()
+        settingsKeepConversationsArchivedHolder.beGone()
+        settingsArchiveDivider.beGone()
+        if (SmsDeleteGuard.isArchiveDisabled(this@SettingsActivity)) {
+            config.keepConversationsArchived = false
+            return@apply
+        }
+        settingsArchivedMessagesLabel.beVisible()
+        settingsKeepConversationsArchivedHolder.beVisible()
+        settingsArchiveDivider.beVisible()
         settingsKeepConversationsArchived.isChecked = config.keepConversationsArchived
         settingsKeepConversationsArchivedHolder.setOnClickListener {
             settingsKeepConversationsArchived.toggle()

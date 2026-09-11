@@ -427,8 +427,13 @@ fun Context.getConversations(
                 ) else ""
             val isGroupConversation = phoneNumbers.size > 1
             val read = cursor.getIntValue(Threads.READ) == 1
-            val archived =
-                if (archiveAvailable) cursor.getIntValue(Threads.ARCHIVED) == 1 else false
+            val archived = if (SmsDeleteGuard.isArchiveDisabled(this)) {
+                false
+            } else if (archiveAvailable) {
+                cursor.getIntValue(Threads.ARCHIVED) == 1
+            } else {
+                false
+            }
             val unreadCount = if (!read) unreadMap[id] ?: 0 else 0
             val conversation = Conversation(
                 threadId = id,
@@ -966,6 +971,9 @@ fun Context.restoreMessageFromRecycleBin(id: Long) {
 }
 
 fun Context.updateConversationArchivedStatus(threadId: Long, archived: Boolean) {
+    if (archived && SmsDeleteGuard.isArchiveDisabled(this)) {
+        return
+    }
     val uri = Threads.CONTENT_URI
     val values = ContentValues().apply {
         put(Threads.ARCHIVED, archived)
@@ -1385,7 +1393,37 @@ fun Context.getDefaultKeyboardHeight(): Int {
 }
 
 fun Context.shouldUnarchive(): Boolean {
-    return config.isArchiveAvailable && !config.keepConversationsArchived
+    if (!config.isArchiveAvailable) {
+        return false
+    }
+    if (SmsDeleteGuard.isArchiveDisabled(this)) {
+        return true
+    }
+    return !config.keepConversationsArchived
+}
+
+/** Put archived threads back in the inbox when kids are not allowed to hide texts. */
+fun Context.restoreArchivedConversationsIfLocked() {
+    if (!SmsDeleteGuard.isArchiveDisabled(this)) {
+        return
+    }
+    config.keepConversationsArchived = false
+    try {
+        val values = ContentValues().apply {
+            put(Threads.ARCHIVED, 0)
+        }
+        contentResolver.update(
+            Threads.CONTENT_URI,
+            values,
+            "${Threads.ARCHIVED} = 1",
+            null
+        )
+    } catch (_: Exception) {
+    }
+    try {
+        conversationsDB.unarchiveAll()
+    } catch (_: Exception) {
+    }
 }
 
 fun Context.copyToUri(src: Uri, dst: Uri) {

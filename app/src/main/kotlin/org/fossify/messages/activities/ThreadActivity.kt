@@ -356,7 +356,8 @@ class ThreadActivity : SimpleActivity() {
 
     private fun refreshMenuItems() {
         val firstPhoneNumber = participants.firstOrNull()?.phoneNumbers?.firstOrNull()?.value
-        val archiveAvailable = config.isArchiveAvailable
+        val archiveAvailable = config.isArchiveAvailable &&
+            !SmsDeleteGuard.isArchiveDisabled(this@ThreadActivity)
         binding.threadToolbar.menu.apply {
             findItem(R.id.delete).isVisible =
                 threadItems.isNotEmpty() && !SmsDeleteGuard.isDeleteDisabled(this@ThreadActivity)
@@ -399,7 +400,10 @@ class ThreadActivity : SimpleActivity() {
                 askConfirmDelete()
             }
             R.id.restore -> askConfirmRestoreAll()
-            R.id.archive -> archiveConversation()
+            R.id.archive -> {
+                if (SmsDeleteGuard.isArchiveDisabled(this)) return true
+                archiveConversation()
+            }
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
             R.id.conversation_details -> launchConversationDetails(threadId)
@@ -856,6 +860,11 @@ class ThreadActivity : SimpleActivity() {
     private fun setupConversation() {
         ensureBackgroundThread {
             conversation = conversationsDB.getConversationWithThreadId(threadId)
+            if (SmsDeleteGuard.isArchiveDisabled(this) && conversation?.isArchived == true) {
+                updateConversationArchivedStatus(threadId, false)
+                conversation = conversation?.copy(isArchived = false)
+                refreshConversations()
+            }
         }
     }
 
@@ -1218,6 +1227,9 @@ class ThreadActivity : SimpleActivity() {
     }
 
     private fun archiveConversation() {
+        if (SmsDeleteGuard.isArchiveDisabled(this)) {
+            return
+        }
         ensureBackgroundThread {
             updateConversationArchivedStatus(threadId, true)
             runOnUiThread {

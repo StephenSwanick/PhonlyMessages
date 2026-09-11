@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const dryRun = process.argv.includes('--dry-run');
 const PKG = 'co.phonly.messages';
-const VERSION_CODE = 35;
+const VERSION_CODE = 36;
 const APK = join(
   process.env.LOCALAPPDATA || join(process.env.USERPROFILE, 'AppData/Local'),
   `phonly-messages-build/app/outputs/apk/foss/release/messages-${VERSION_CODE}-foss-release.apk`,

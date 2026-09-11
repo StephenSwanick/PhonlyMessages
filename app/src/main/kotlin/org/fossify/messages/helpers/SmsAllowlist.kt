@@ -21,7 +21,8 @@ import org.json.JSONArray
  * Missing key or `true` keeps today’s empty-list / missing sms = emergency only.
  *
  * Do not parse Mongo `devices.allowList` (`{ enabled, updatedAt, entries }`).
- * Do not read `label` for display. Names stay Contacts Provider.
+ * Do not read `label` for display. Names stay Android Contacts Provider.
+ * `co.phonly.contacts` is retired — do not wait on it or write contacts from Messages.
  */
 object SmsAllowlist {
     const val ALLOWLIST_JSON_KEY = "allowlist_json"

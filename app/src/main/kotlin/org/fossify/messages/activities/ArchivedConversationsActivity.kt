@@ -19,9 +19,11 @@ import org.fossify.messages.databinding.ActivityArchivedConversationsBinding
 import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.removeAllArchivedConversations
+import org.fossify.messages.extensions.restoreArchivedConversationsIfLocked
 import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
+import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.models.Conversation
 import org.fossify.messages.models.Events
 import org.greenrobot.eventbus.EventBus
@@ -35,6 +37,16 @@ class ArchivedConversationsActivity : SimpleActivity() {
     @SuppressLint("InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (SmsDeleteGuard.isArchiveDisabled(this)) {
+            ensureBackgroundThread {
+                restoreArchivedConversationsIfLocked()
+                runOnUiThread {
+                    refreshConversations()
+                }
+            }
+            finish()
+            return
+        }
         setContentView(binding.root)
         setupOptionsMenu()
 

@@ -43,7 +43,8 @@ class ConversationsAdapter(
         val isSingleSelection = isOneItemSelected()
         val selectedConversation = selectedItems.firstOrNull() ?: return
         val isGroupConversation = selectedConversation.isGroupConversation
-        val archiveAvailable = activity.config.isArchiveAvailable
+        val archiveAvailable = activity.config.isArchiveAvailable &&
+            !SmsDeleteGuard.isArchiveDisabled(activity)
 
         menu.apply {
             findItem(R.id.cab_block_number).title =
@@ -80,7 +81,10 @@ class ConversationsAdapter(
                 if (SmsDeleteGuard.isDeleteDisabled(activity)) return
                 askConfirmDelete()
             }
-            R.id.cab_archive -> askConfirmArchive()
+            R.id.cab_archive -> {
+                if (SmsDeleteGuard.isArchiveDisabled(activity)) return
+                askConfirmArchive()
+            }
             R.id.cab_rename_conversation -> renameConversation(selectedItems.first())
             R.id.cab_conversation_details ->
                 activity.launchConversationDetails(selectedItems.first().threadId)
@@ -165,6 +169,9 @@ class ConversationsAdapter(
     }
 
     private fun askConfirmArchive() {
+        if (SmsDeleteGuard.isArchiveDisabled(activity)) {
+            return
+        }
         val itemsCnt = selectedKeys.size
         val items = resources.getQuantityString(R.plurals.delete_conversations, itemsCnt, itemsCnt)
 
@@ -179,7 +186,7 @@ class ConversationsAdapter(
     }
 
     private fun archiveConversations() {
-        if (selectedKeys.isEmpty()) {
+        if (selectedKeys.isEmpty() || SmsDeleteGuard.isArchiveDisabled(activity)) {
             return
         }
 

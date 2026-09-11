@@ -10,6 +10,7 @@ import org.fossify.commons.extensions.hasPermission
 import org.fossify.commons.helpers.PERMISSION_READ_CONTACTS
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.extensions.rescheduleAllScheduledMessages
+import org.fossify.messages.extensions.restoreArchivedConversationsIfLocked
 import org.fossify.messages.helpers.MessagingCache
 import org.fossify.messages.helpers.NotificationCue
 
@@ -33,6 +34,7 @@ class App : FossifyApp() {
 
         NotificationCue.start(this)
         ensureBackgroundThread {
+            restoreArchivedConversationsIfLocked()
             rescheduleAllScheduledMessages()
         }
     }

@@ -8,21 +8,36 @@ This app stays its own public repo. Not inside PhonlyV1 / Phonly Code / Phonly P
 This chat is Messages-only. Do not edit PhonlyV1 / Phonly Code or Phone unless the operator explicitly asks in this session.
 Kotlin namespace stays `org.fossify.messages`. Install id is `co.phonly.messages` (debug and release; no `.debug` suffix).
 Voice/dialer lives in Phonly Phone (`co.phonly.phone`). Do not put calling here.
+**`co.phonly.contacts` is retired.** Do not install it, query it, push Esper AppConfig to it, or wait on a contacts helper APK. Names in threads are Android Contacts Provider. Messages does not write contacts.
 
 Sibling checkout: `C:\Users\steph\ERC Today Dropbox\SwanickCPA\Phonly\Phonly Phone`
 Phone notes: that folder’s `NOTES.md`. Copy patterns from there; do not edit Phone unless asked.
 
-## Status (2026-09-09) — Messages 35 on AAAAY (V2-DEV); this chat closes
+## Status (2026-09-11) — Messages 36 SHOW on PhonlyV2 - DEV v52.0
 
-**1.3.0 / 35** is SHOW on PhonlyV2 - DEV **v46.0** and is on **AAAAY** (operator: Phone, Messages, and Contacts enterprise apps all installed). Live Home/School/TS stay on **34** until asked. Do not fleet CONVERGE. Do not Save KSP.
+**1.4.0 / 36** is in the Esper library and SHOW on **PhonlyV2 - DEV v52.0**. Live Home/School/TS stay on **34**. Do not fleet CONVERGE. Do not Save KSP. AAAAY still needs a CONVERGE to install 36.
+
+**This APK:** foss **`1.4.0` / `VERSION_CODE` 36**. Package `co.phonly.messages`. Esper-signed with `%LOCALAPPDATA%\phonly-messages-signing\`. Library `e57df4aa-4589-414e-95cd-324c3afb6251`, version `e8a38a64-342b-44fb-ac66-e14f28440d84`. APK: `%LOCALAPPDATA%\phonly-messages-build\app\outputs\apk\foss\release\messages-36-foss-release.apk`.
+
+**This cut vs 35:** Archive is locked with the same Esper key as Delete (`disable_delete`). Already-archived threads restore to the inbox on launch. **`co.phonly.contacts` is retired** — do not wait on it; names stay Android Contacts Provider; Messages does not write contacts.
+
+**Allowlist:** Esper boolean **`allowlist_enabled`** next to **`allowlist_json`**. Only explicit `false` allows all SMS. Missing key or `true` keeps today’s empty-list / missing `sms` = emergency only. This APK does **not** parse Mongo `devices.allowList` (`{ enabled, updatedAt, entries }`). Do not read `label` from `allowlist_json` for display.
+
+**Delete / archive:** off by default (`disable_delete`). Kids cannot delete threads, single messages, recycle-bin contents, or use notification Delete. They also cannot archive threads to hide them. Only explicit `false` allows delete and archive. Copy / forward / share stay.
+
+34 cue behavior on AAAAY is still the locked product (pile / looked / hold). This cut does not change that.
+
+## Status (2026-09-09) — Messages 35 on AAAAY (V2-DEV); history
+
+**1.3.0 / 35** was SHOW on PhonlyV2 - DEV **v46.0** and on **AAAAY** (operator: Phone and Messages enterprise apps installed). Superseded on DEV by **36** / **v52.0**. Live Home/School/TS stay on **34** until asked. Do not fleet CONVERGE. Do not Save KSP.
 
 **This APK:** foss **`1.3.0` / `VERSION_CODE` 35**. Package `co.phonly.messages`. Esper-signed with `%LOCALAPPDATA%\phonly-messages-signing\`. Library `e57df4aa-4589-414e-95cd-324c3afb6251`, version `737a9101-5238-4e86-ac16-600f25b2e8bf`. APK: `%LOCALAPPDATA%\phonly-messages-build\app\outputs\apk\foss\release\messages-35-foss-release.apk`.
 
-**Allowlist:** Esper boolean **`allowlist_enabled`** next to **`allowlist_json`**. Only explicit `false` allows all SMS. Missing key or `true` keeps today’s empty-list / missing `sms` = emergency only. This APK does **not** parse Mongo `devices.allowList` (`{ enabled, updatedAt, entries }`). Names in threads stay Contacts Provider. Do not write contacts from Messages. Do not read `label` from `allowlist_json` for display.
+**Allowlist:** Esper boolean **`allowlist_enabled`** next to **`allowlist_json`**. Only explicit `false` allows all SMS. Missing key or `true` keeps today’s empty-list / missing `sms` = emergency only. This APK does **not** parse Mongo `devices.allowList` (`{ enabled, updatedAt, entries }`). Names in threads stay Android Contacts Provider. Do not write contacts from Messages. Do not read `label` from `allowlist_json` for display. Do not wait on **`co.phonly.contacts`** (retired).
 
-**Delete:** off by default (`disable_delete`). Kids cannot delete threads, single messages, recycle-bin contents, or use notification Delete. Only explicit `false` allows delete. Archive / copy / forward / share stay.
+**Delete:** off by default (`disable_delete`). Kids cannot delete threads, single messages, recycle-bin contents, or use notification Delete. **Archive is locked with the same key** (kids cannot hide threads from the inbox). Only explicit `false` allows delete and archive. Copy / forward / share stay.
 
-**Send to phone (2026-09-09):** dashboard push updated Esper AppConfig on **Phone** and **Messages** (`allowlist_json` + `allowlist_enabled: true`). It does **not** yet push `co.phonly.contacts` — names in Phone will not change until that third target is wired (other agent). Testing of 35 (allowlist flag, delete lock, Contacts names) follows elsewhere.
+**Send to phone (2026-09-09):** dashboard push updated Esper AppConfig on **Phone** and **Messages** (`allowlist_json` + `allowlist_enabled: true`). Ignore leftover “wait for the contacts helper” notes. **`co.phonly.contacts` is retired** — do not push AppConfig to it, do not install it, do not wait on another agent to wire it. Testing of 35 (allowlist flag, delete lock) follows elsewhere.
 
 34 cue behavior on AAAAY is still the locked product (pile / looked / hold). This cut does not change that.
 
@@ -178,7 +193,7 @@ Esper’s device AppConfig box for this package must be:
 Messages uses `sms: true` (default **false** if the key is missing — only numbers explicitly allowed to text). Phone uses `voice` (default true). Keep that split.  
 When the list is **on**: missing, blank, `[]`, or invalid JSON → emergency only.  
 When the list is **off** (`allowlist_enabled: false`): any number may be texted; 911 is always allowed.  
-Names: Contacts Provider (`co.phonly.contacts` writes those). Do not write contacts from Messages. Do not read `label` from `allowlist_json` for display.  
+Names: Android Contacts Provider. Do not write contacts from Messages. Do not read `label` from `allowlist_json` for display. **`co.phonly.contacts` is retired** — do not wait on it.  
 Plug-in: `SmsAllowlist`.
 
 Do **not** put kid numbers in KSP / Backbone.
@@ -204,18 +219,21 @@ Do not rely on Fossify’s user block-list UI as the allowlist.
 
 Kids must not hide SMS/MMS. Not phone calls / call log — that is Phonly Phone.
 
-Esper boolean **`disable_delete`** on package **`co.phonly.messages`**. Only an explicit `false` (boolean, or strings `false` / `0`) allows delete. Missing key or `true` keeps delete off. The child cannot turn it on in Settings.
+Esper boolean **`disable_delete`** on package **`co.phonly.messages`**. Only an explicit `false` (boolean, or strings `false` / `0`) allows delete **and archive**. Missing key or `true` keeps both off. The child cannot turn it on in Settings.
 
-When delete is off:
+When delete/archive is off:
 
 - Hide every Delete control: single message (thread CAB), whole conversation (thread menu + conversation list), archived threads, Recycle Bin empty/permanent delete, notification Delete (`DeleteSmsReceiver`).
+- Hide every Archive control: conversation list CAB, thread Archive, main-menu “show archived”, Settings “keep conversations archived”.
 - No-op the delete functions so a hidden UI or leftover intent cannot wipe the telephony store. MMS resend cleanup may still delete the original duplicate (`bypassDeleteGuard`).
+- No-op archive writes (`updateConversationArchivedStatus(..., true)`). Unarchive still runs so existing hidden threads come back.
+- On launch, restore any already-archived threads to the inbox (telephony + Room). Incoming SMS/MMS also unarchive.
 - Lock Recycle Bin Settings (child can otherwise turn it off and delete for real). Recycle Bin auto-expire is also off.
 - Canceling an unsent scheduled message stays allowed.
 
 **Requires this app to be the default SMS app.** Android only lets `ROLE_SMS` write/delete the SMS provider. Google Messages / Samsung Messages must stay HIDE/DISABLE (already the fleet plan) or the child can delete there.
 
-Does **not** cover: archive, copy, forward, share (message stays on the device); factory reset / uninstall if Esper still allows those; the other party’s phone.
+Does **not** cover: copy, forward, share (message stays on the device); factory reset / uninstall if Esper still allows those; the other party’s phone.
 
 Dashboard / Mongo / Esper push of the key is **Phonly Code + V1**. Until Code pushes `false`, missing key = delete off.
 
@@ -263,7 +281,7 @@ Signed **1.1.0 / 26** shipped `SYSTEM_ALERT_WINDOW` + `UnreadOverlayService` and
 
 ## Suggested next
 
-This Messages chat is done. **35** is on V2-DEV / AAAAY. Testing (allowlist_enabled, disable-delete, Contacts names) is elsewhere. Another agent is wiring Send to phone → `co.phonly.contacts`. Do not pin over **34** on live Home/School/TS. Do not fleet CONVERGE. Do not Save KSP unless asked.
+This Messages chat: **36** is SHOW on **PhonlyV2 - DEV v52.0**. AAAAY will not install it until that device CONVERGEs. Live Home/School/TS stay on **34**. **`co.phonly.contacts` is retired** — ignore leftover “wait for the contacts helper” notes. Do not fleet CONVERGE. Do not Save KSP unless asked.
 
 Do not funnel HTTP through Phone. Do not merge overlay. `knownSigner` is Phone’s job, not a cue blocker.
 

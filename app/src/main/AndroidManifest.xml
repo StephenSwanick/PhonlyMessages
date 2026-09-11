@@ -28,6 +28,7 @@
         tools:node="remove" />
 
     <queries>
+        <!-- co.phonly.contacts is retired. Do not query or depend on that package. -->
         <package android:name="org.fossify.contacts.debug" />
         <package android:name="org.fossify.contacts" />
         <package android:name="co.phonly.phone" />

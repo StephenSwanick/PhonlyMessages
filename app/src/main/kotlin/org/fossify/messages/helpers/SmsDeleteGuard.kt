@@ -5,12 +5,12 @@ import android.content.RestrictionsManager
 import android.os.Bundle
 
 /**
- * Stops kids from hiding SMS/MMS (threads, messages, recycle bin, notification Delete).
+ * Stops kids from hiding SMS/MMS (delete, archive, recycle bin, notification Delete).
  *
- * [DISABLE_DELETE_KEY]: only an explicit `false` allows delete.
- * Missing key or `true` keeps delete off.
+ * [DISABLE_DELETE_KEY]: only an explicit `false` allows delete or archive.
+ * Missing key or `true` keeps both off.
  *
- * Does not cover archive, copy, forward, share, drafts, or scheduled-send cleanup.
+ * Does not cover copy, forward, share, drafts, or scheduled-send cleanup.
  */
 object SmsDeleteGuard {
     const val DISABLE_DELETE_KEY = "disable_delete"
@@ -19,9 +19,14 @@ object SmsDeleteGuard {
         return isDeleteDisabled(applicationRestrictions(context))
     }
 
+    /** Archive hides threads from the inbox. Same Esper key as delete. */
+    fun isArchiveDisabled(context: Context): Boolean {
+        return isDeleteDisabled(context)
+    }
+
     /**
-     * Only an explicit `false` (boolean or the strings `false` / `0`) allows delete.
-     * Missing key, `true`, or anything else keeps delete off.
+     * Only an explicit `false` (boolean or the strings `false` / `0`) allows delete and archive.
+     * Missing key, `true`, or anything else keeps both off.
      */
     internal fun isDeleteDisabled(restrictions: Bundle?): Boolean {
         if (restrictions == null || !restrictions.containsKey(DISABLE_DELETE_KEY)) {

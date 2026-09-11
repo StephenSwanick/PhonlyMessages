@@ -63,7 +63,9 @@ import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getMessages
 import org.fossify.messages.extensions.insertOrUpdateConversation
 import org.fossify.messages.extensions.messagesDB
+import org.fossify.messages.extensions.restoreArchivedConversationsIfLocked
 import org.fossify.messages.helpers.SEARCHED_MESSAGE_ID
+import org.fossify.messages.helpers.SmsDeleteGuard
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
 import org.fossify.messages.models.Conversation
@@ -178,7 +180,10 @@ class MainActivity : SimpleActivity() {
         binding.mainMenu.requireToolbar().setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.show_recycle_bin -> launchRecycleBin()
-                R.id.show_archived -> launchArchivedConversations()
+                R.id.show_archived -> {
+                    if (SmsDeleteGuard.isArchiveDisabled(this)) return@setOnMenuItemClickListener true
+                    launchArchivedConversations()
+                }
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false
@@ -190,7 +195,8 @@ class MainActivity : SimpleActivity() {
     private fun refreshMenuItems() {
         binding.mainMenu.requireToolbar().menu.apply {
             findItem(R.id.show_recycle_bin).isVisible = config.useRecycleBin
-            findItem(R.id.show_archived).isVisible = config.isArchiveAvailable
+            findItem(R.id.show_archived).isVisible =
+                config.isArchiveAvailable && !SmsDeleteGuard.isArchiveDisabled(this@MainActivity)
         }
     }
 
@@ -288,6 +294,7 @@ class MainActivity : SimpleActivity() {
 
     private fun getCachedConversations() {
         ensureBackgroundThread {
+            restoreArchivedConversationsIfLocked()
             val conversations = try {
                 conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
             } catch (_: Exception) {
@@ -617,6 +624,9 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun launchArchivedConversations() {
+        if (SmsDeleteGuard.isArchiveDisabled(this)) {
+            return
+        }
         hideKeyboard()
         startActivity(Intent(applicationContext, ArchivedConversationsActivity::class.java))
     }
